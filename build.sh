@@ -47,6 +47,40 @@ if [[ "$all" -eq 1 ]]; then
         "-T" "ps_5_1"
         "-Fo" "$project_dir/build/d3d12_ps.dxbc"
     )
+    compile_opengl_vs=(
+        "$vulkan_dxc"
+        "$project_dir/shaders.hlsl"
+        "${vulkan_dxc_flags[@]}"
+        "-DOPENGL"
+        "-E" "vs"
+        "-T" "vs_6_0"
+        "-Fo" "$project_dir/build/opengl_vs.spv"
+        "-vkbr" "b0" "0" "0" "0"
+        "-vkbr" "b1" "0" "1" "0"
+        "-vkbr" "t2" "0" "2" "0"
+        "-vkbr" "t3" "0" "3" "0"
+        "-vkbr" "t4" "0" "4" "0"
+        "-vkbr" "t5" "0" "5" "0"
+        "-vkbr" "t6" "0" "6" "0"
+        "-vkbr" "s0" "0" "6" "0"
+    )
+    compile_opengl_ps=(
+        "$vulkan_dxc"
+        "$project_dir/shaders.hlsl"
+        "${vulkan_dxc_flags[@]}"
+        "-DOPENGL"
+        "-E" "ps"
+        "-T" "ps_6_0"
+        "-Fo" "$project_dir/build/opengl_ps.spv"
+        "-vkbr" "b0" "0" "0" "0"
+        "-vkbr" "b1" "0" "1" "0"
+        "-vkbr" "t2" "0" "2" "0"
+        "-vkbr" "t3" "0" "3" "0"
+        "-vkbr" "t4" "0" "4" "0"
+        "-vkbr" "t5" "0" "5" "0"
+        "-vkbr" "t6" "0" "6" "0"
+        "-vkbr" "s0" "0" "6" "0"
+    )
     compile_vulkan_vs=(
         "$vulkan_dxc"
         "$project_dir/shaders.hlsl"
@@ -83,6 +117,8 @@ if [[ "$all" -eq 1 ]]; then
     "${compile_d3d11_ps[@]}" > /dev/null
     "${compile_d3d12_vs[@]}" > /dev/null
     "${compile_d3d12_ps[@]}" > /dev/null
+    "${compile_opengl_vs[@]}"
+    "${compile_opengl_ps[@]}"
     "${compile_vulkan_vs[@]}"
     "${compile_vulkan_ps[@]}"
 
