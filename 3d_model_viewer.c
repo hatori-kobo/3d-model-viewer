@@ -631,7 +631,7 @@ update_app(pg_assets* assets,
         }
 
         // Process held inputs.
-        for (pg_input_event_type et = 0; (usize)et < CAP(iq->duration_held);
+        for (pg_input_event_type et = 0; et < (s32)CAP(iq->duration_held);
              et += 1)
         {
             input_action* ia = &app_state.input_action_map[et];
