@@ -2,6 +2,13 @@
 
 set -euo pipefail
 
+if [[ -z "${project_dir-}" ]]; then
+  echo "This script should not be executed directly. Instead execute" \
+       "~/win_build.sh from the project directory, which sources this" \
+       "project-local script."
+  exit 1
+fi
+
 mkdir -p "$project_dir/build"
 
 if [[ "$all" -eq 1 ]]; then

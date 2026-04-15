@@ -3,7 +3,7 @@
 #define APP_IMGUI
 
 #if defined(WINDOWS)
-#include <windows/pg_windows.h>
+#include <windows/hk_windows.h>
 #else
 static_assert(0, "no supported platform is defined");
 #endif
@@ -40,16 +40,16 @@ typedef struct
     u32 index_offset;
     u32 material_id;
     u32 texture_id;
-    pg_f32_4x4 global_transform;
+    hk_f32_4x4 global_transform;
 } constants_cb;
 
 // NOTE: This represents constant buffer data, which requires 16-byte alignment.
 // This may require padding a struct member to 16 bytes.
 typedef struct
 {
-    pg_f32_4x4 world_from_model;
-    pg_f32_4x4 clip_from_world;
-    pg_f32_3x camera_pos;
+    hk_f32_4x4 world_from_model;
+    hk_f32_4x4 clip_from_world;
+    hk_f32_3x camera_pos;
     f32 padding0;
 } per_frame_cb;
 
@@ -67,15 +67,15 @@ typedef struct
     b8 auto_rotate;
     u32 model_id;
     u32 model_animation_count;
-    pg_f32_3x scaling;
-    pg_f32_3x rotation;
-    pg_f32_3x translation;
-    pg_animation animation;                                   // align: 4
-    pg_camera camera;                                         // align: 4
-    input_action input_action_map[PG_INPUT_EVENT_TYPE_COUNT]; // align: 4
-    pg_graphics_api gfx_api;                                  // align: 4
-    pg_graphics_api supported_gfx_apis;                       // align: 4
-    pg_graphics_metrics* metrics;
+    hk_f32_3x scaling;
+    hk_f32_3x rotation;
+    hk_f32_3x translation;
+    hk_animation animation;                                   // align: 4
+    hk_camera camera;                                         // align: 4
+    input_action input_action_map[HK_INPUT_EVENT_TYPE_COUNT]; // align: 4
+    hk_graphics_api gfx_api;                                  // align: 4
+    hk_graphics_api supported_gfx_apis;                       // align: 4
+    hk_graphics_metrics* metrics;
 } application_state;
 
 typedef struct
@@ -116,13 +116,13 @@ GLOBAL c8* model_names[] = {"None",
                             "Virtual City",
                             "Water Bottle"};
 
-GLOBAL pg_config config
+GLOBAL hk_config config
     = {.gamepad_count = 1,
        .input_queue_event_count = 10,
-       .gamepad_deadzone = PG_INPUT_GAMEPAD_DEFAULT_DEADZONE,
-       .permanent_mem_size = PG_MEBIBYTE(1024),
-       .transient_mem_size = PG_KIBIBYTE(256),
-       .min_gpu_mem_size = PG_MEBIBYTE(512)};
+       .gamepad_deadzone = HK_INPUT_GAMEPAD_DEFAULT_DEADZONE,
+       .permanent_mem_size = HK_MEBIBYTE(1024),
+       .transient_mem_size = HK_KIBIBYTE(256),
+       .min_gpu_mem_size = HK_MEBIBYTE(512)};
 
 GLOBAL application_state app_state
     = {.vsync = true,
@@ -134,21 +134,21 @@ FUNCTION void
 reset_view(void)
 {
     app_state.auto_rotate = true;
-    app_state.scaling = (pg_f32_3x){0};
-    app_state.rotation = (pg_f32_3x){0};
-    app_state.translation = (pg_f32_3x){0};
-    app_state.animation = (pg_animation){0};
+    app_state.scaling = (hk_f32_3x){0};
+    app_state.rotation = (hk_f32_3x){0};
+    app_state.translation = (hk_f32_3x){0};
+    app_state.animation = (hk_animation){0};
     app_state.camera.position
-        = (pg_f32_3x){.x = PG_PI / 2.0f, .y = PG_PI / 2.0f, .z = 6.0f};
+        = (hk_f32_3x){.x = HK_PI / 2.0f, .y = HK_PI / 2.0f, .z = 6.0f};
 
     if (app_state.model_id == MODEL_ABSTRACT_RAINBOW_TRANSLUCENT_PENDANT)
     {
-        app_state.scaling = pg_f32_3x_pack(0.8f);
+        app_state.scaling = hk_f32_3x_pack(0.8f);
     }
     else if (app_state.model_id == MODEL_BOX_ANIMATED)
     {
-        app_state.scaling = pg_f32_3x_pack(0.45f);
-        app_state.camera.position.y = PG_PI / 4.0f;
+        app_state.scaling = hk_f32_3x_pack(0.45f);
+        app_state.camera.position.y = HK_PI / 4.0f;
     }
     else if (app_state.model_id == MODEL_BRAINSTEM)
     {
@@ -156,39 +156,39 @@ reset_view(void)
     }
     else if (app_state.model_id == MODEL_CORSET)
     {
-        app_state.scaling = pg_f32_3x_pack(35.0f);
+        app_state.scaling = hk_f32_3x_pack(35.0f);
         app_state.translation.y = -1.0f;
     }
     else if (app_state.model_id == MODEL_DAMAGED_HELMET)
     {
-        app_state.scaling = pg_f32_3x_pack(1.125f);
+        app_state.scaling = hk_f32_3x_pack(1.125f);
     }
     else if (app_state.model_id == MODEL_FOX)
     {
-        app_state.scaling = pg_f32_3x_pack(0.015f);
+        app_state.scaling = hk_f32_3x_pack(0.015f);
         app_state.rotation.y = -70.0f;
         app_state.translation.y = -1.0f;
     }
     else if (app_state.model_id == MODEL_FTM)
     {
-        app_state.scaling = pg_f32_3x_pack(0.13f);
+        app_state.scaling = hk_f32_3x_pack(0.13f);
         app_state.rotation.y = 135.0f;
-        app_state.camera.position.y = PG_PI / 2.5f;
+        app_state.camera.position.y = HK_PI / 2.5f;
     }
     else if (app_state.model_id == MODEL_PLAYSTATION_1)
     {
-        app_state.scaling = pg_f32_3x_pack(0.5f);
+        app_state.scaling = hk_f32_3x_pack(0.5f);
         app_state.rotation.x = 120.0f;
         app_state.rotation.z = 270.0f;
     }
     else if (app_state.model_id == MODEL_VIRTUAL_CITY)
     {
-        app_state.scaling = pg_f32_3x_pack(0.075f);
-        app_state.camera.position.y = PG_PI / 3.0f;
+        app_state.scaling = hk_f32_3x_pack(0.075f);
+        app_state.camera.position.y = HK_PI / 3.0f;
     }
     else if (app_state.model_id == MODEL_WATER_BOTTLE)
     {
-        app_state.scaling = pg_f32_3x_pack(8.0f);
+        app_state.scaling = hk_f32_3x_pack(8.0f);
         app_state.rotation.y = 225.0f;
     }
 }
@@ -197,7 +197,7 @@ FUNCTION void
 imgui_ui(void)
 {
 #if defined(APP_IMGUI)
-    pg_imgui_graphics_header(app_state.supported_gfx_apis,
+    hk_imgui_graphics_header(app_state.supported_gfx_apis,
                              app_state.metrics,
                              &app_state.gfx_api,
                              &app_state.fullscreen,
@@ -280,27 +280,27 @@ imgui_ui(void)
 }
 
 FUNCTION void
-init_app(pg_file_read_fp pg_file_read,
-         pg_scratch_allocator* permanent_mem,
-         pg_assets** assets,
+init_app(hk_file_read_fp hk_file_read,
+         hk_scratch_allocator* permanent_mem,
+         hk_assets** assets,
          models_metadata* metadata,
-         pg_input_queue* input_queue,
-         pg_graphics_renderer_data* renderer_data,
-         pg_error* err)
+         hk_input_queue* input_queue,
+         hk_graphics_renderer_data* renderer_data,
+         hk_error* err)
 {
     // Read assets file.
-    *assets = pg_assets_read_pga(pg_string_create(PG_ASSET_FILE_NAME, 0, err),
-                                 pg_file_read,
+    *assets = hk_assets_read_hka(hk_string_create(HK_ASSET_FILE_NAME, 0, err),
+                                 hk_file_read,
                                  permanent_mem,
                                  err);
-    pg_assets_verify(*assets, 0, 0, 0, 0, MODEL_COUNT, err);
+    hk_assets_verify(*assets, 0, 0, 0, 0, MODEL_COUNT, err);
     static_assert(CAP(model_names) == MODEL_COUNT,
                   "unexpected model names count");
 
     // Get models metadata.
     for (u32 i = 0; i < (*assets)->model_count; i += 1)
     {
-        pg_asset_model* model = &(*assets)->models[i];
+        hk_asset_model* model = &(*assets)->models[i];
 
         if (model->vertex_count > metadata->max_vertex_count)
         {
@@ -329,71 +329,71 @@ init_app(pg_file_read_fp pg_file_read,
     }
 
     // Initialize input queue.
-    pg_scratch_alloc(permanent_mem,
-                     config.input_queue_event_count * sizeof(pg_input_event),
-                     alignof(pg_input_event),
+    hk_scratch_alloc(permanent_mem,
+                     config.input_queue_event_count * sizeof(hk_input_event),
+                     alignof(hk_input_event),
                      &input_queue->events,
                      err);
     input_queue->event_count = config.input_queue_event_count;
 
     // Set input action map.
-    for (pg_input_event_type et = 0; et < PG_INPUT_EVENT_TYPE_COUNT; et += 1)
+    for (hk_input_event_type et = 0; et < HK_INPUT_EVENT_TYPE_COUNT; et += 1)
     {
         input_action* at = &app_state.input_action_map[et];
         switch (et)
         {
-            case PG_KEYBOARD_S:
-            case PG_KEYBOARD_DOWN:
-            case PG_GAMEPAD_DOWN:
-            case PG_KEYBOARD_D:
-            case PG_KEYBOARD_RIGHT:
-            case PG_GAMEPAD_RIGHT:
+            case HK_KEYBOARD_S:
+            case HK_KEYBOARD_DOWN:
+            case HK_GAMEPAD_DOWN:
+            case HK_KEYBOARD_D:
+            case HK_KEYBOARD_RIGHT:
+            case HK_GAMEPAD_RIGHT:
             {
-                at->repeat_rate = PG_MILLISECOND(1.0f / 2.0f);
+                at->repeat_rate = HK_MILLISECOND(1.0f / 2.0f);
                 at->type = INPUT_ACTION_TYPE_NEXT_MODEL;
                 break;
             }
-            case PG_KEYBOARD_W:
-            case PG_KEYBOARD_UP:
-            case PG_GAMEPAD_UP:
-            case PG_KEYBOARD_A:
-            case PG_KEYBOARD_LEFT:
-            case PG_GAMEPAD_LEFT:
+            case HK_KEYBOARD_W:
+            case HK_KEYBOARD_UP:
+            case HK_GAMEPAD_UP:
+            case HK_KEYBOARD_A:
+            case HK_KEYBOARD_LEFT:
+            case HK_GAMEPAD_LEFT:
             {
-                at->repeat_rate = PG_MILLISECOND(1.0f / 2.0f);
+                at->repeat_rate = HK_MILLISECOND(1.0f / 2.0f);
                 at->type = INPUT_ACTION_TYPE_PREVIOUS_MODEL;
                 break;
             }
-            case PG_KEYBOARD_E:
-            case PG_GAMEPAD_RB:
+            case HK_KEYBOARD_E:
+            case HK_GAMEPAD_RB:
             {
                 at->type = INPUT_ACTION_TYPE_NEXT_ANIMATION;
                 break;
             }
-            case PG_KEYBOARD_Q:
-            case PG_GAMEPAD_LB:
+            case HK_KEYBOARD_Q:
+            case HK_GAMEPAD_LB:
             {
                 at->type = INPUT_ACTION_TYPE_PREVIOUS_ANIMATION;
                 break;
             }
-            case PG_MOUSE_MOVED:
-            case PG_GAMEPAD_LS_MOVED:
-            case PG_GAMEPAD_RS_MOVED:
+            case HK_MOUSE_MOVED:
+            case HK_GAMEPAD_LS_MOVED:
+            case HK_GAMEPAD_RS_MOVED:
             {
                 at->type = INPUT_ACTION_TYPE_ROTATE;
                 break;
             }
-            case PG_GAMEPAD_LT:
+            case HK_GAMEPAD_LT:
             {
                 at->type = INPUT_ACTION_TYPE_ZOOM_OUT;
                 break;
             }
-            case PG_GAMEPAD_RT:
+            case HK_GAMEPAD_RT:
             {
                 at->type = INPUT_ACTION_TYPE_ZOOM_IN;
                 break;
             }
-            case PG_MOUSE_SCROLLED:
+            case HK_MOUSE_SCROLLED:
             {
                 at->type = INPUT_ACTION_TYPE_ZOOM;
                 break;
@@ -407,31 +407,31 @@ init_app(pg_file_read_fp pg_file_read,
 
     // Initialize renderer data.
     {
-        pg_graphics_buffer_data buffer_data[]
+        hk_graphics_buffer_data buffer_data[]
             = {{.id = GRAPHICS_BUFFER_PER_FRAME_CB,
-                .shader_stage = PG_SHADER_STAGE_VERTEX,
+                .shader_stage = HK_SHADER_STAGE_VERTEX,
                 .max_elem_count = 1,
                 .elem_size = sizeof(per_frame_cb)},
                {.id = GRAPHICS_BUFFER_VERTICES_SB,
-                .shader_stage = PG_SHADER_STAGE_VERTEX,
+                .shader_stage = HK_SHADER_STAGE_VERTEX,
                 .max_elem_count = metadata->max_vertex_count,
-                .elem_size = sizeof(pg_vertex)},
+                .elem_size = sizeof(hk_vertex)},
                {.id = GRAPHICS_BUFFER_INDICES_SB,
-                .shader_stage = PG_SHADER_STAGE_VERTEX,
+                .shader_stage = HK_SHADER_STAGE_VERTEX,
                 .max_elem_count = metadata->max_index_count,
-                .elem_size = sizeof(PG_GRAPHICS_INDEX_TYPE)},
+                .elem_size = sizeof(HK_GRAPHICS_INDEX_TYPE)},
                {.id = GRAPHICS_BUFFER_JOINT_TRANSFORMS_SB,
-                .shader_stage = PG_SHADER_STAGE_VERTEX,
+                .shader_stage = HK_SHADER_STAGE_VERTEX,
                 .max_elem_count = metadata->max_joint_count,
-                .elem_size = sizeof(pg_f32_4x4)},
+                .elem_size = sizeof(hk_f32_4x4)},
                {.id = GRAPHICS_BUFFER_MATERIAL_PROPERTIES_SB,
-                .shader_stage = PG_SHADER_STAGE_PIXEL,
+                .shader_stage = HK_SHADER_STAGE_PIXEL,
                 .max_elem_count = metadata->max_material_count,
-                .elem_size = sizeof(pg_asset_material_properties)}};
+                .elem_size = sizeof(hk_asset_material_properties)}};
         static_assert(CAP(buffer_data) == GRAPHICS_BUFFER_COUNT,
                       "unexpected buffer data count");
 
-        *renderer_data = (pg_graphics_renderer_data){
+        *renderer_data = (hk_graphics_renderer_data){
             .wireframe = app_state.wireframe_mode,
             .render_target_srgb = true,
             .depth_buffer_bit_count = 32,
@@ -439,18 +439,18 @@ init_app(pg_file_read_fp pg_file_read,
             .buffer_count = CAP(buffer_data),
             .max_texture_count = (*assets)->model_count
                                  * metadata->max_material_count
-                                 * PG_TEXTURE_TYPE_COUNT};
+                                 * HK_TEXTURE_TYPE_COUNT};
 
-        pg_scratch_alloc(permanent_mem,
+        hk_scratch_alloc(permanent_mem,
                          renderer_data->buffer_count
-                             * sizeof(pg_graphics_buffer_data),
-                         alignof(pg_graphics_buffer_data),
+                             * sizeof(hk_graphics_buffer_data),
+                         alignof(hk_graphics_buffer_data),
                          &renderer_data->buffer_data,
                          err);
-        pg_copy(buffer_data,
-                renderer_data->buffer_count * sizeof(pg_graphics_buffer_data),
+        hk_copy(buffer_data,
+                renderer_data->buffer_count * sizeof(hk_graphics_buffer_data),
                 renderer_data->buffer_data,
-                renderer_data->buffer_count * sizeof(pg_graphics_buffer_data),
+                renderer_data->buffer_count * sizeof(hk_graphics_buffer_data),
                 err);
     }
 
@@ -458,7 +458,7 @@ init_app(pg_file_read_fp pg_file_read,
 }
 
 FUNCTION void
-process_action(input_action_type at, pg_f32_2x event_value, pg_error* err)
+process_action(input_action_type at, hk_f32_2x event_value, hk_error* err)
 {
     f32 frame_time = app_state.metrics->cpu_last_frame_time;
 
@@ -500,16 +500,16 @@ process_action(input_action_type at, pg_f32_2x event_value, pg_error* err)
             app_state.auto_rotate = false;
 
             f32 manual_rotation_rate = 135.0f; // degrees/ms
-            pg_f32_2x rotation_speed
-                = pg_f32_2x_mul(pg_f32_2x_pack((manual_rotation_rate
-                                                * (1.0f / PG_MILLISECOND(1)))
+            hk_f32_2x rotation_speed
+                = hk_f32_2x_mul(hk_f32_2x_pack((manual_rotation_rate
+                                                * (1.0f / HK_MILLISECOND(1)))
                                                * frame_time),
                                 event_value);
-            app_state.camera.position.x += pg_f32_deg_to_rad(rotation_speed.x);
-            app_state.camera.position.y += pg_f32_deg_to_rad(rotation_speed.y);
-            pg_camera_clamp((pg_f32_2x){.min = 0.0f, .max = 2.0f * PG_PI},
-                            (pg_f32_2x){.min = 0.0f, .max = PG_PI},
-                            (pg_f32_2x){.min = 2.0f, .max = 10.0f},
+            app_state.camera.position.x += hk_f32_deg_to_rad(rotation_speed.x);
+            app_state.camera.position.y += hk_f32_deg_to_rad(rotation_speed.y);
+            hk_camera_clamp((hk_f32_2x){.min = 0.0f, .max = 2.0f * HK_PI},
+                            (hk_f32_2x){.min = 0.0f, .max = HK_PI},
+                            (hk_f32_2x){.min = 2.0f, .max = 10.0f},
                             true,
                             &app_state.camera);
             break;
@@ -525,29 +525,29 @@ process_action(input_action_type at, pg_f32_2x event_value, pg_error* err)
             f32 zoom_rate = 1.0f / 150.0f;
             f32 zoom_speed = zoom_rate * event_value.x * frame_time;
             app_state.camera.position.z -= zoom_speed;
-            pg_camera_clamp((pg_f32_2x){.min = 0.0f, .max = 2.0f * PG_PI},
-                            (pg_f32_2x){.min = 0.0f, .max = PG_PI},
-                            (pg_f32_2x){.min = 2.0f, .max = 10.0f},
+            hk_camera_clamp((hk_f32_2x){.min = 0.0f, .max = 2.0f * HK_PI},
+                            (hk_f32_2x){.min = 0.0f, .max = HK_PI},
+                            (hk_f32_2x){.min = 2.0f, .max = 10.0f},
                             true,
                             &app_state.camera);
             break;
         }
         default:
         {
-            PG_ERROR_MINOR("unexpected input action type");
+            HK_ERROR_MINOR("unexpected input action type");
             break;
         }
     }
 }
 
 FUNCTION void
-update_app(pg_assets* assets,
-           pg_input_queue* iq,
+update_app(hk_assets* assets,
+           hk_input_queue* iq,
            models_metadata* metadata,
-           pg_f32_2x render_res,
-           pg_scratch_allocator* transient_mem,
-           pg_graphics_renderer_data* renderer_data,
-           pg_error* err)
+           hk_f32_2x render_res,
+           hk_scratch_allocator* transient_mem,
+           hk_graphics_renderer_data* renderer_data,
+           hk_error* err)
 {
     f32 frame_time = app_state.metrics->cpu_last_frame_time;
 
@@ -557,7 +557,7 @@ update_app(pg_assets* assets,
         for (; iq->read_idx != iq->write_idx;
              iq->read_idx = (iq->read_idx + 1) % iq->event_count)
         {
-            pg_input_event ie = iq->events[iq->read_idx];
+            hk_input_event ie = iq->events[iq->read_idx];
             input_action* ia = &app_state.input_action_map[ie.event_type];
 
             // Skip any input event that does not have a mapped input action.
@@ -566,14 +566,14 @@ update_app(pg_assets* assets,
                 continue;
             }
 
-            pg_f32_2x event_value = ie.value;
+            hk_f32_2x event_value = ie.value;
             {
                 // Handle mouse click-to-drag.
                 if (ia->type == INPUT_ACTION_TYPE_ROTATE
-                    && ie.input_type == PG_INPUT_TYPE_MOUSE)
+                    && ie.input_type == HK_INPUT_TYPE_MOUSE)
                 {
                     // Skip if left mouse button is not held down.
-                    if (iq->duration_held[PG_MOUSE_LEFT] == 0.0f)
+                    if (iq->duration_held[HK_MOUSE_LEFT] == 0.0f)
                     {
                         continue;
                     }
@@ -587,20 +587,20 @@ update_app(pg_assets* assets,
                          read_idx
                          = (read_idx + iq->event_count - 1) % iq->event_count)
                     {
-                        pg_input_event prev_ie = iq->events[read_idx];
+                        hk_input_event prev_ie = iq->events[read_idx];
 
                         // Don't look past the start of the chord.
-                        if (prev_ie.event_type == PG_MOUSE_LEFT)
+                        if (prev_ie.event_type == HK_MOUSE_LEFT)
                         {
                             break;
                         }
 
-                        if (prev_ie.event_type == PG_MOUSE_MOVED)
+                        if (prev_ie.event_type == HK_MOUSE_MOVED)
                         {
                             f32 cursor_multipler = 100.0f;
-                            event_value = pg_f32_2x_mul(
-                                pg_f32_2x_sub(ie.value, prev_ie.value),
-                                pg_f32_2x_pack(cursor_multipler));
+                            event_value = hk_f32_2x_mul(
+                                hk_f32_2x_sub(ie.value, prev_ie.value),
+                                hk_f32_2x_pack(cursor_multipler));
                             drag = true;
                             break;
                         }
@@ -615,12 +615,12 @@ update_app(pg_assets* assets,
 
                 // Handle mouse scrolling.
                 if (ia->type == INPUT_ACTION_TYPE_ZOOM
-                    && ie.event_type == PG_MOUSE_SCROLLED)
+                    && ie.event_type == HK_MOUSE_SCROLLED)
                 {
                     f32 scroll_multiplier = 5.0f;
                     event_value
-                        = pg_f32_2x_mul(ie.value,
-                                        pg_f32_2x_pack(scroll_multiplier));
+                        = hk_f32_2x_mul(ie.value,
+                                        hk_f32_2x_pack(scroll_multiplier));
                 }
             }
 
@@ -631,7 +631,7 @@ update_app(pg_assets* assets,
         }
 
         // Process held inputs.
-        for (pg_input_event_type et = 0; et < (s32)CAP(iq->duration_held);
+        for (hk_input_event_type et = 0; et < (s32)CAP(iq->duration_held);
              et += 1)
         {
             input_action* ia = &app_state.input_action_map[et];
@@ -639,13 +639,13 @@ update_app(pg_assets* assets,
             if (ia->repeat_rate != 0.0f
                 && iq->duration_held[et] > ia->repeat_rate)
             {
-                process_action(ia->type, pg_f32_2x_pack(0.0f), err);
+                process_action(ia->type, hk_f32_2x_pack(0.0f), err);
                 iq->duration_held[et] -= ia->repeat_rate;
             }
         }
     }
 
-    pg_asset_model* model = &assets->models[app_state.model_id];
+    hk_asset_model* model = &assets->models[app_state.model_id];
 
     // Animate.
     {
@@ -655,12 +655,12 @@ update_app(pg_assets* assets,
         {
             f32 auto_rotation_rate = 30.0f; // degrees/sec
             f32 rotation_speed
-                = (auto_rotation_rate * (1.0f / PG_MILLISECOND(1)))
+                = (auto_rotation_rate * (1.0f / HK_MILLISECOND(1)))
                   * frame_time;
-            app_state.camera.position.x += pg_f32_deg_to_rad(rotation_speed);
-            pg_camera_clamp((pg_f32_2x){.min = 0.0f, .max = 2.0f * PG_PI},
-                            (pg_f32_2x){.min = 0.0f, .max = PG_PI},
-                            (pg_f32_2x){.min = 2.0f, .max = 10.0f},
+            app_state.camera.position.x += hk_f32_deg_to_rad(rotation_speed);
+            hk_camera_clamp((hk_f32_2x){.min = 0.0f, .max = 2.0f * HK_PI},
+                            (hk_f32_2x){.min = 0.0f, .max = HK_PI},
+                            (hk_f32_2x){.min = 2.0f, .max = 10.0f},
                             true,
                             &app_state.camera);
         }
@@ -685,32 +685,32 @@ update_app(pg_assets* assets,
     }
 
     // Generate matrices.
-    pg_f32_4x4 world_from_model = pg_f32_4x4_world_from_model(
+    hk_f32_4x4 world_from_model = hk_f32_4x4_world_from_model(
         app_state.scaling,
-        pg_f32_4x_euler_to_quaternion(app_state.rotation),
+        hk_f32_4x_euler_to_quaternion(app_state.rotation),
         app_state.translation);
-    pg_f32_3x camera_position
-        = pg_camera_get_cartesian_position(&app_state.camera);
-    pg_f32_4x4 view_from_world
-        = pg_f32_4x4_view_from_world(camera_position,
+    hk_f32_3x camera_position
+        = hk_camera_get_cartesian_position(&app_state.camera);
+    hk_f32_4x4 view_from_world
+        = hk_f32_4x4_view_from_world(camera_position,
                                      app_state.camera.focal_point,
                                      app_state.camera.up_axis);
-    pg_f32_4x4 view_from_model
-        = pg_f32_4x4_mul(view_from_world, world_from_model);
-    pg_f32_4x4 clip_from_view = pg_f32_4x4_clip_from_view_perspective(
+    hk_f32_4x4 view_from_model
+        = hk_f32_4x4_mul(view_from_world, world_from_model);
+    hk_f32_4x4 clip_from_view = hk_f32_4x4_clip_from_view_perspective(
         27.0f,
         render_res.width / render_res.height,
         0.01f,
         16.0f);
 
     // Get drawables.
-    pg_f32_4x4* joint_transforms = 0;
-    pg_graphics_drawables drawables = {0};
+    hk_f32_4x4* joint_transforms = 0;
+    hk_graphics_drawables drawables = {0};
     {
-        pg_asset_model models[] = {*model};
+        hk_asset_model models[] = {*model};
         u32 model_ids[] = {app_state.model_id};
-        pg_animation animations[] = {app_state.animation};
-        pg_assets_get_3d_drawables(assets,
+        hk_animation animations[] = {app_state.animation};
+        hk_assets_get_3d_drawables(assets,
                                    model_ids,
                                    animations,
                                    CAP(models),
@@ -728,11 +728,11 @@ update_app(pg_assets* assets,
         {
             if (gb == GRAPHICS_BUFFER_PER_FRAME_CB)
             {
-                pg_f32_4x4 clip_from_world
-                    = pg_f32_4x4_mul(clip_from_view, view_from_world);
+                hk_f32_4x4 clip_from_world
+                    = hk_f32_4x4_mul(clip_from_view, view_from_world);
 
                 per_frame_cb* per_frame;
-                pg_scratch_alloc(transient_mem,
+                hk_scratch_alloc(transient_mem,
                                  sizeof(per_frame_cb),
                                  alignof(per_frame_cb),
                                  &per_frame,
@@ -770,11 +770,11 @@ update_app(pg_assets* assets,
             }
             else if (gb == GRAPHICS_BUFFER_MATERIAL_PROPERTIES_SB)
             {
-                pg_asset_material_properties* material_properties;
-                pg_scratch_alloc(transient_mem,
+                hk_asset_material_properties* material_properties;
+                hk_scratch_alloc(transient_mem,
                                  model->material_count
-                                     * sizeof(pg_asset_material_properties),
-                                 alignof(pg_asset_material_properties),
+                                     * sizeof(hk_asset_material_properties),
+                                 alignof(hk_asset_material_properties),
                                  &material_properties,
                                  err);
 
@@ -791,17 +791,17 @@ update_app(pg_assets* assets,
             if (renderer_data->buffer_data[gb].elem_count
                 > renderer_data->buffer_data[gb].max_elem_count)
             {
-                PG_ERROR_MAJOR(
+                HK_ERROR_MAJOR(
                     "renderer buffer element count exceeds max element count");
             }
         }
 
         // Declare (required and optional) textures for upcoming frame.
         {
-            pg_scratch_alloc(transient_mem,
+            hk_scratch_alloc(transient_mem,
                              metadata->total_texture_count
-                                 * sizeof(pg_graphics_texture_data),
-                             alignof(pg_graphics_texture_data),
+                                 * sizeof(hk_graphics_texture_data),
+                             alignof(hk_graphics_texture_data),
                              &renderer_data->texture_data,
                              err);
 
@@ -836,7 +836,7 @@ update_app(pg_assets* assets,
                         }
                     }
 
-                    pg_asset_model* m = &assets->models[model_id];
+                    hk_asset_model* m = &assets->models[model_id];
                     for (u32 j = 0; j < m->material_count; j += 1)
                     {
                         for (u32 k = 0; k < m->materials[j].texture_count;
@@ -845,12 +845,12 @@ update_app(pg_assets* assets,
                             renderer_data
                                 ->texture_data[required_texture_count
                                                + optional_texture_count]
-                                = (pg_graphics_texture_data){
-                                    .id = (u32)pg_3d_to_1d_index(
+                                = (hk_graphics_texture_data){
+                                    .id = (u32)hk_3d_to_1d_index(
                                         m->materials[j].textures[k].type,
                                         j,
                                         model_id,
-                                        PG_TEXTURE_TYPE_COUNT,
+                                        HK_TEXTURE_TYPE_COUNT,
                                         metadata->max_material_count),
                                     .texture = &(m->materials[j].textures[k])};
 
@@ -883,18 +883,18 @@ update_app(pg_assets* assets,
 
         // Set draw data.
         {
-            pg_scratch_alloc(transient_mem,
+            hk_scratch_alloc(transient_mem,
                              drawables.drawable_count
-                                 * sizeof(pg_graphics_draw_data),
-                             alignof(pg_graphics_draw_data),
+                                 * sizeof(hk_graphics_draw_data),
+                             alignof(hk_graphics_draw_data),
                              &renderer_data->draw_data,
                              err);
 
             for (u32 i = 0; i < drawables.drawable_count; i += 1)
             {
-                pg_graphics_drawable* d = &drawables.drawables[i];
+                hk_graphics_drawable* d = &drawables.drawables[i];
                 constants_cb* constants;
-                pg_scratch_alloc(transient_mem,
+                hk_scratch_alloc(transient_mem,
                                  sizeof(constants_cb),
                                  alignof(constants_cb),
                                  &constants,
@@ -903,21 +903,21 @@ update_app(pg_assets* assets,
                     = (constants_cb){.vertex_offset = d->vertex_offset,
                                      .index_offset = d->index_offset,
                                      .material_id = d->material_id,
-                                     .texture_id = (u32)pg_3d_to_1d_index(
+                                     .texture_id = (u32)hk_3d_to_1d_index(
                                          0,
                                          d->material_id,
                                          d->art_id,
-                                         PG_TEXTURE_TYPE_COUNT,
+                                         HK_TEXTURE_TYPE_COUNT,
                                          metadata->max_material_count),
                                      .global_transform = d->global_transform};
 
-                renderer_data->draw_data[i] = (pg_graphics_draw_data){
+                renderer_data->draw_data[i] = (hk_graphics_draw_data){
                     .opaque
                     = i < drawables.opaque_drawable_count ? true : false,
                     .vertex_count = d->index_count,
                     .instance_count = 1,
                     .start_texture_id = constants->texture_id,
-                    .texture_count = PG_TEXTURE_TYPE_COUNT,
+                    .texture_count = HK_TEXTURE_TYPE_COUNT,
                     .constants = constants};
             }
 
@@ -935,25 +935,25 @@ wWinMain(HINSTANCE inst, HINSTANCE prev_inst, WCHAR* cmd_args, s32 show_code)
     (void)cmd_args;
     (void)show_code;
 
-    pg_windows windows = {0};
-    pg_error error = {.log = &pg_windows_error_log};
-    pg_error* err = &error;
+    hk_windows windows = {0};
+    hk_error error = {.log = &hk_windows_error_log};
+    hk_error* err = &error;
 
-    pg_assets* assets = 0;
+    hk_assets* assets = 0;
     models_metadata metadata = {0};
 
-    pg_windows_init_window(&windows,
+    hk_windows_init_window(&windows,
                            inst,
                            config.fixed_aspect_ratio_width,
                            config.fixed_aspect_ratio_height,
                            &app_state.fullscreen,
                            err);
-    pg_windows_init_memory(&windows,
+    hk_windows_init_memory(&windows,
                            config.permanent_mem_size,
                            config.transient_mem_size,
                            err);
 
-    init_app(&pg_windows_file_read,
+    init_app(&hk_windows_file_read,
              &windows.permanent_mem,
              &assets,
              &metadata,
@@ -961,14 +961,14 @@ wWinMain(HINSTANCE inst, HINSTANCE prev_inst, WCHAR* cmd_args, s32 show_code)
              &windows.gfx.renderer_data,
              err);
 
-    pg_windows_init_graphics(&windows,
+    hk_windows_init_graphics(&windows,
                              config.min_gpu_mem_size,
                              windows.gfx.renderer_data,
                              app_state.vsync,
                              &app_state.gfx_api,
                              &app_state.supported_gfx_apis,
                              err);
-    pg_windows_init_metrics(&windows.metrics, err);
+    hk_windows_init_metrics(&windows.metrics, err);
     app_state.metrics = &windows.metrics.gfx_metrics;
 
     while (windows.msg.message != WM_QUIT)
@@ -980,9 +980,9 @@ wWinMain(HINSTANCE inst, HINSTANCE prev_inst, WCHAR* cmd_args, s32 show_code)
             continue;
         }
 
-        pg_graphics_api gfx_api = app_state.gfx_api;
+        hk_graphics_api gfx_api = app_state.gfx_api;
 
-        pg_windows_update_input(&windows,
+        hk_windows_update_input(&windows,
                                 config.gamepad_deadzone,
                                 config.gamepad_count,
                                 err);
@@ -996,7 +996,7 @@ wWinMain(HINSTANCE inst, HINSTANCE prev_inst, WCHAR* cmd_args, s32 show_code)
                    err);
         metadata.model_id_last_frame = app_state.model_id;
 
-        pg_windows_update_graphics(&windows,
+        hk_windows_update_graphics(&windows,
                                    app_state.gfx_api,
                                    windows.gfx.renderer_data,
                                    app_state.fullscreen,
@@ -1004,12 +1004,12 @@ wWinMain(HINSTANCE inst, HINSTANCE prev_inst, WCHAR* cmd_args, s32 show_code)
                                    &imgui_ui,
                                    err);
 
-        pg_windows_update_metrics(&windows.metrics, err);
+        hk_windows_update_metrics(&windows.metrics, err);
 
         if (app_state.gfx_api != gfx_api)
         {
             metadata.model_id_last_frame = 0;
-            pg_windows_reload_graphics(&windows,
+            hk_windows_reload_graphics(&windows,
                                        inst,
                                        config.min_gpu_mem_size,
                                        windows.gfx.renderer_data,
@@ -1022,10 +1022,10 @@ wWinMain(HINSTANCE inst, HINSTANCE prev_inst, WCHAR* cmd_args, s32 show_code)
                                        err);
         }
 
-        pg_scratch_free(&windows.transient_mem);
+        hk_scratch_free(&windows.transient_mem);
     }
 
-    pg_windows_release(&windows);
+    hk_windows_release(&windows);
 
     return 0;
 }
