@@ -168,7 +168,7 @@ geometry_smith(float n_dot_l, float n_dot_v, float roughness)
     return g1_schlick_ggx(n_dot_l, k) * g1_schlick_ggx(n_dot_v, k);
 }
 
-// NOTE: pg_alpha_mode values: PG_AM_OPAQUE (0), PG_AM_MASK (1), PG_AM_BLEND (2)
+// NOTE: hk_alpha_mode values: HK_AM_OPAQUE (0), HK_AM_MASK (1), HK_AM_BLEND (2)
 float4
 get_base_color(pixel p, uint tex_offset, material_properties mp)
 {
