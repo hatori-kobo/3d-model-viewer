@@ -4,7 +4,7 @@
 Hatori Kobo. It serves as a basic demonstration of the 3D capabilities of the
 proprietary engine.
 
-[![Demo](demo.webp)](https://youtu.be/xh3sMvgR8wY)
+[![Demo](demo.webp)]
 
 All code has been written from scratch in-house following "handmade"
 principles, with minimal use of external libraries and other dependencies. The
