@@ -11,42 +11,43 @@
     ConstantBuffer<type> name : register(reg)
 #endif
 
-struct constants
+struct per_draw
 {
+    float4x4 global_transform;
     uint vertex_offset;
     uint index_offset;
     uint material_id;
     uint texture_id;
-    float4x4 global_transform;
 };
 
-struct frame_data
+struct per_frame
 {
     float4x4 world_from_model;
     float4x4 clip_from_world;
     float3 camera_pos;
+    float _padding_0;
 };
 
 struct vertex
 {
+    float4 color;
+    float4 tangent;
+    float4 joint_weights;
     float3 position;
     float3 normal;
-    float4 tangent;
     float2 tex_coord;
-    float4 color;
     uint4 joint_ids;
-    float4 joint_weights;
 };
 
 struct material_properties
 {
+    float4 base_color_factor;
+    uint alpha_mode;
+    float3 emissive_factor;
     uint has_texture;
     float alpha_cutoff;
     float metallic_factor;
     float roughness_factor;
-    float3 emissive_factor;
-    float4 base_color_factor;
-    uint alpha_mode;
 };
 
 struct vs_out
@@ -69,10 +70,10 @@ struct ps_out
 #if defined(VULKAN)
 [[vk::push_constant]]
 #endif
-CONSTANT_BUFFER(constants, per_draw_cb, b0);
+CONSTANT_BUFFER(per_draw, per_draw_cb, b0);
 
 // Vertex Shader Resources
-CONSTANT_BUFFER(frame_data, per_frame_cb, b1);
+CONSTANT_BUFFER(per_frame, per_frame_cb, b1);
 StructuredBuffer<vertex> vertices_sb : register(t2);
 StructuredBuffer<uint> indices_sb : register(t3);
 StructuredBuffer<float4x4> joint_transforms_sb : register(t4);

@@ -32,50 +32,50 @@ typedef enum
     INPUT_ACTION_TYPE_COUNT
 } input_action_type;
 
-// NOTE: This represents constant buffer data, which requires 16-byte alignment.
-// This may require padding a struct member to 16 bytes.
+// NOTE: This is used as a shader resource so padding must be made explicit.
+// It is bound as a constant buffer so the size must be a multiple of 16 bytes.
 typedef struct
 {
+    hk_f32_4x4 global_transform; // align: 16
     u32 vertex_offset;
     u32 index_offset;
     u32 material_id;
     u32 texture_id;
-    hk_f32_4x4 global_transform;
-} constants_cb;
+} per_draw;
 
-// NOTE: This represents constant buffer data, which requires 16-byte alignment.
-// This may require padding a struct member to 16 bytes.
+// NOTE: This is used as a shader resource so padding must be made explicit.
+// It is bound as a constant buffer so the size must be a multiple of 16 bytes.
 typedef struct
 {
-    hk_f32_4x4 world_from_model;
-    hk_f32_4x4 clip_from_world;
+    hk_f32_4x4 world_from_model; // align: 16
+    hk_f32_4x4 clip_from_world;  // align: 16
     hk_f32_3x camera_pos;
-    f32 padding0;
-} per_frame_cb;
+    f32 _padding_0;
+} per_frame;
 
 typedef struct
 {
-    f32 repeat_rate;
     input_action_type type; // align: 4
+    f32 repeat_rate;
 } input_action;
 
 typedef struct
 {
-    b8 fullscreen;
-    b8 vsync;
-    b8 wireframe_mode;
-    b8 auto_rotate;
-    u32 model_id;
-    u32 model_animation_count;
-    hk_f32_3x scaling;
-    hk_f32_3x rotation;
-    hk_f32_3x translation;
+    hk_f32_4x rotation; // align: 16
+    hk_graphics_metrics* metrics;
     hk_animation animation;                                   // align: 4
     hk_camera camera;                                         // align: 4
     input_action input_action_map[HK_INPUT_EVENT_TYPE_COUNT]; // align: 4
     hk_graphics_api gfx_api;                                  // align: 4
     hk_graphics_api supported_gfx_apis;                       // align: 4
-    hk_graphics_metrics* metrics;
+    hk_f32_3x scaling;
+    hk_f32_3x translation;
+    u32 model_id;
+    u32 model_animation_count;
+    b8 fullscreen;
+    b8 vsync;
+    b8 auto_rotate;
+    b8 wireframe_mode;
 } application_state;
 
 typedef struct
@@ -117,42 +117,46 @@ GLOBAL c8* model_names[] = {"None",
                             "Water Bottle"};
 
 GLOBAL hk_config config
-    = {.gamepad_count = 1,
+    = {.permanent_mem_size = HK_MEBIBYTE(1024),
+       .transient_mem_size = HK_KIBIBYTE(256),
+       .min_gpu_mem_size = HK_MEBIBYTE(512),
        .input_queue_event_count = 10,
        .gamepad_deadzone = HK_INPUT_GAMEPAD_DEFAULT_DEADZONE,
-       .permanent_mem_size = HK_MEBIBYTE(1024),
-       .transient_mem_size = HK_KIBIBYTE(256),
-       .min_gpu_mem_size = HK_MEBIBYTE(512)};
+       .gamepad_count = 1};
 
 GLOBAL application_state app_state
-    = {.vsync = true,
-       .auto_rotate = true,
+    = {.camera = {.up_axis = {.y = 1.0f}, .arcball = true},
        .model_id = MODEL_DAMAGED_HELMET,
-       .camera = {.arcball = true, .up_axis = {.y = 1.0f}}};
+       .vsync = true};
 
 FUNCTION void
 reset_view(void)
 {
-    app_state.auto_rotate = true;
-    app_state.scaling = (hk_f32_3x){0};
-    app_state.rotation = (hk_f32_3x){0};
-    app_state.translation = (hk_f32_3x){0};
     app_state.animation = (hk_animation){0};
     app_state.camera.position
-        = (hk_f32_3x){.x = HK_PI / 2.0f, .y = HK_PI / 2.0f, .z = 6.0f};
+        = (hk_f32_3x){.x = HK_PI / 4.0f, .y = HK_PI / 2.0f, .z = 6.0f};
+    app_state.scaling = (hk_f32_3x){0};
+    app_state.rotation = (hk_f32_4x){0};
+    app_state.translation = (hk_f32_3x){0};
+    app_state.auto_rotate = true;
 
     if (app_state.model_id == MODEL_ABSTRACT_RAINBOW_TRANSLUCENT_PENDANT)
     {
         app_state.scaling = hk_f32_3x_pack(0.8f);
+        app_state.rotation
+            = hk_f32_4x_rotation((hk_f32_3x){.x = 0.0f, .y = 1.0f, .z = 0.0f},
+                                 -150.0f);
     }
     else if (app_state.model_id == MODEL_BOX_ANIMATED)
     {
-        app_state.scaling = hk_f32_3x_pack(0.45f);
         app_state.camera.position.y = HK_PI / 4.0f;
+        app_state.scaling = hk_f32_3x_pack(0.45f);
     }
     else if (app_state.model_id == MODEL_BRAINSTEM)
     {
+        app_state.camera.position.x = HK_PI / 2.0f;
         app_state.translation.y = -1.0f;
+        app_state.auto_rotate = false;
     }
     else if (app_state.model_id == MODEL_CORSET)
     {
@@ -166,30 +170,36 @@ reset_view(void)
     else if (app_state.model_id == MODEL_FOX)
     {
         app_state.scaling = hk_f32_3x_pack(0.015f);
-        app_state.rotation.y = -70.0f;
         app_state.translation.y = -1.0f;
     }
     else if (app_state.model_id == MODEL_FTM)
     {
-        app_state.scaling = hk_f32_3x_pack(0.13f);
-        app_state.rotation.y = 135.0f;
         app_state.camera.position.y = HK_PI / 2.5f;
+        app_state.scaling = hk_f32_3x_pack(0.13f);
+        app_state.rotation
+            = hk_f32_4x_rotation((hk_f32_3x){.x = 0.0f, .y = 1.0f, .z = 0.0f},
+                                 180.0f);
     }
     else if (app_state.model_id == MODEL_PLAYSTATION_1)
     {
         app_state.scaling = hk_f32_3x_pack(0.5f);
-        app_state.rotation.x = 120.0f;
-        app_state.rotation.z = 270.0f;
+        app_state.rotation = hk_f32_4x_mul_quaternion(
+            hk_f32_4x_rotation((hk_f32_3x){.x = 1.0f, .y = 0.0f, .z = 0.0f},
+                               90.0f),
+            hk_f32_4x_rotation((hk_f32_3x){.x = 0.0f, .y = 1.0f, .z = 0.0f},
+                               -90.0f));
     }
     else if (app_state.model_id == MODEL_VIRTUAL_CITY)
     {
-        app_state.scaling = hk_f32_3x_pack(0.075f);
         app_state.camera.position.y = HK_PI / 3.0f;
+        app_state.scaling = hk_f32_3x_pack(0.075f);
     }
     else if (app_state.model_id == MODEL_WATER_BOTTLE)
     {
         app_state.scaling = hk_f32_3x_pack(8.0f);
-        app_state.rotation.y = 225.0f;
+        app_state.rotation
+            = hk_f32_4x_rotation((hk_f32_3x){.x = 0.0f, .y = 1.0f, .z = 0.0f},
+                                 -90.0f);
     }
 }
 
@@ -290,10 +300,14 @@ init_app(hk_file_read_fp hk_file_read,
 {
     // Read assets file.
     *assets = hk_assets_read_hka(hk_string_create(HK_ASSET_FILE_NAME, 0, err),
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 MODEL_COUNT,
                                  hk_file_read,
                                  permanent_mem,
                                  err);
-    hk_assets_verify(*assets, 0, 0, 0, 0, MODEL_COUNT, err);
     static_assert(CAP(model_names) == MODEL_COUNT,
                   "unexpected model names count");
 
@@ -349,8 +363,8 @@ init_app(hk_file_read_fp hk_file_read,
             case HK_KEYBOARD_RIGHT:
             case HK_GAMEPAD_RIGHT:
             {
-                at->repeat_rate = HK_MILLISECOND(1.0f / 2.0f);
                 at->type = INPUT_ACTION_TYPE_NEXT_MODEL;
+                at->repeat_rate = HK_MILLISECOND(1.0f / 2.0f);
                 break;
             }
             case HK_KEYBOARD_W:
@@ -360,8 +374,8 @@ init_app(hk_file_read_fp hk_file_read,
             case HK_KEYBOARD_LEFT:
             case HK_GAMEPAD_LEFT:
             {
-                at->repeat_rate = HK_MILLISECOND(1.0f / 2.0f);
                 at->type = INPUT_ACTION_TYPE_PREVIOUS_MODEL;
+                at->repeat_rate = HK_MILLISECOND(1.0f / 2.0f);
                 break;
             }
             case HK_KEYBOARD_E:
@@ -408,38 +422,38 @@ init_app(hk_file_read_fp hk_file_read,
     // Initialize renderer data.
     {
         hk_graphics_buffer_data buffer_data[]
-            = {{.id = GRAPHICS_BUFFER_PER_FRAME_CB,
+            = {{.elem_size = sizeof(per_frame),
                 .shader_stage = HK_SHADER_STAGE_VERTEX,
                 .max_elem_count = 1,
-                .elem_size = sizeof(per_frame_cb)},
-               {.id = GRAPHICS_BUFFER_VERTICES_SB,
+                .id = GRAPHICS_BUFFER_PER_FRAME_CB},
+               {.elem_size = sizeof(hk_vertex),
                 .shader_stage = HK_SHADER_STAGE_VERTEX,
                 .max_elem_count = metadata->max_vertex_count,
-                .elem_size = sizeof(hk_vertex)},
-               {.id = GRAPHICS_BUFFER_INDICES_SB,
+                .id = GRAPHICS_BUFFER_VERTICES_SB},
+               {.elem_size = sizeof(HK_GRAPHICS_INDEX_TYPE),
                 .shader_stage = HK_SHADER_STAGE_VERTEX,
                 .max_elem_count = metadata->max_index_count,
-                .elem_size = sizeof(HK_GRAPHICS_INDEX_TYPE)},
-               {.id = GRAPHICS_BUFFER_JOINT_TRANSFORMS_SB,
+                .id = GRAPHICS_BUFFER_INDICES_SB},
+               {.elem_size = sizeof(hk_f32_4x4),
                 .shader_stage = HK_SHADER_STAGE_VERTEX,
                 .max_elem_count = metadata->max_joint_count,
-                .elem_size = sizeof(hk_f32_4x4)},
-               {.id = GRAPHICS_BUFFER_MATERIAL_PROPERTIES_SB,
+                .id = GRAPHICS_BUFFER_JOINT_TRANSFORMS_SB},
+               {.elem_size = sizeof(hk_asset_material_properties),
                 .shader_stage = HK_SHADER_STAGE_PIXEL,
                 .max_elem_count = metadata->max_material_count,
-                .elem_size = sizeof(hk_asset_material_properties)}};
+                .id = GRAPHICS_BUFFER_MATERIAL_PROPERTIES_SB}};
         static_assert(CAP(buffer_data) == GRAPHICS_BUFFER_COUNT,
                       "unexpected buffer data count");
 
         *renderer_data = (hk_graphics_renderer_data){
-            .wireframe = app_state.wireframe_mode,
-            .render_target_srgb = true,
-            .depth_buffer_bit_count = 32,
-            .constant_count = sizeof(constants_cb) / sizeof(u32),
+            .constant_count = sizeof(per_draw) / sizeof(u32),
             .buffer_count = CAP(buffer_data),
             .max_texture_count = (*assets)->model_count
                                  * metadata->max_material_count
-                                 * HK_TEXTURE_TYPE_COUNT};
+                                 * HK_TEXTURE_TYPE_COUNT,
+            .wireframe = app_state.wireframe_mode,
+            .render_target_srgb = true,
+            .depth_buffer_bit_count = 32};
 
         hk_scratch_alloc(permanent_mem,
                          renderer_data->buffer_count
@@ -499,14 +513,14 @@ process_action(input_action_type at, hk_f32_2x event_value, hk_error* err)
         {
             app_state.auto_rotate = false;
 
-            f32 manual_rotation_rate = 135.0f; // degrees/ms
+            f32 manual_rotation_rate = hk_f32_deg_to_rad(135.0f); // degrees/s
             hk_f32_2x rotation_speed
                 = hk_f32_2x_mul(hk_f32_2x_pack((manual_rotation_rate
                                                 * (1.0f / HK_MILLISECOND(1)))
                                                * frame_time),
                                 event_value);
-            app_state.camera.position.x += hk_f32_deg_to_rad(rotation_speed.x);
-            app_state.camera.position.y += hk_f32_deg_to_rad(rotation_speed.y);
+            app_state.camera.position.x += rotation_speed.x;
+            app_state.camera.position.y += rotation_speed.y;
             hk_camera_clamp((hk_f32_2x){.min = 0.0f, .max = 2.0f * HK_PI},
                             (hk_f32_2x){.min = 0.0f, .max = HK_PI},
                             (hk_f32_2x){.min = 2.0f, .max = 10.0f},
@@ -653,11 +667,11 @@ update_app(hk_assets* assets,
 
         if (app_state.auto_rotate)
         {
-            f32 auto_rotation_rate = 30.0f; // degrees/sec
+            f32 auto_rotation_rate = hk_f32_deg_to_rad(30.0f); // degrees/s
             f32 rotation_speed
                 = (auto_rotation_rate * (1.0f / HK_MILLISECOND(1)))
                   * frame_time;
-            app_state.camera.position.x += hk_f32_deg_to_rad(rotation_speed);
+            app_state.camera.position.x += rotation_speed;
             hk_camera_clamp((hk_f32_2x){.min = 0.0f, .max = 2.0f * HK_PI},
                             (hk_f32_2x){.min = 0.0f, .max = HK_PI},
                             (hk_f32_2x){.min = 2.0f, .max = 10.0f},
@@ -684,11 +698,11 @@ update_app(hk_assets* assets,
         }
     }
 
-    // Generate matrices.
-    hk_f32_4x4 world_from_model = hk_f32_4x4_world_from_model(
-        app_state.scaling,
-        hk_f32_4x_euler_to_quaternion(app_state.rotation),
-        app_state.translation);
+    // Compute transformation matrices.
+    hk_f32_4x4 world_from_model
+        = hk_f32_4x4_world_from_model(app_state.scaling,
+                                      app_state.rotation,
+                                      app_state.translation);
     hk_f32_3x camera_position
         = hk_camera_get_cartesian_position(&app_state.camera);
     hk_f32_4x4 view_from_world
@@ -731,42 +745,42 @@ update_app(hk_assets* assets,
                 hk_f32_4x4 clip_from_world
                     = hk_f32_4x4_mul(clip_from_view, view_from_world);
 
-                per_frame_cb* per_frame;
+                per_frame* per_frame_data;
                 hk_scratch_alloc(transient_mem,
-                                 sizeof(per_frame_cb),
-                                 alignof(per_frame_cb),
-                                 &per_frame,
+                                 sizeof(per_frame),
+                                 alignof(per_frame),
+                                 &per_frame_data,
                                  err);
-                *per_frame
-                    = (per_frame_cb){.world_from_model = world_from_model,
-                                     .clip_from_world = clip_from_world,
-                                     .camera_pos = camera_position};
+                *per_frame_data
+                    = (per_frame){.world_from_model = world_from_model,
+                                  .clip_from_world = clip_from_world,
+                                  .camera_pos = camera_position};
 
+                renderer_data->buffer_data[gb].buffer = per_frame_data;
                 renderer_data->buffer_data[gb].elem_count = 1;
-                renderer_data->buffer_data[gb].buffer = per_frame;
             }
             else if (gb == GRAPHICS_BUFFER_VERTICES_SB)
             {
                 if (app_state.model_id != metadata->model_id_last_frame)
                 {
+                    renderer_data->buffer_data[gb].buffer = model->vertices;
                     renderer_data->buffer_data[gb].elem_count
                         = model->vertex_count;
-                    renderer_data->buffer_data[gb].buffer = model->vertices;
                 }
             }
             else if (gb == GRAPHICS_BUFFER_INDICES_SB)
             {
                 if (app_state.model_id != metadata->model_id_last_frame)
                 {
+                    renderer_data->buffer_data[gb].buffer = model->indices;
                     renderer_data->buffer_data[gb].elem_count
                         = model->index_count;
-                    renderer_data->buffer_data[gb].buffer = model->indices;
                 }
             }
             else if (gb == GRAPHICS_BUFFER_JOINT_TRANSFORMS_SB)
             {
-                renderer_data->buffer_data[gb].elem_count = model->joint_count;
                 renderer_data->buffer_data[gb].buffer = joint_transforms;
+                renderer_data->buffer_data[gb].elem_count = model->joint_count;
             }
             else if (gb == GRAPHICS_BUFFER_MATERIAL_PROPERTIES_SB)
             {
@@ -783,9 +797,9 @@ update_app(hk_assets* assets,
                     material_properties[i] = model->materials[i].properties;
                 }
 
+                renderer_data->buffer_data[gb].buffer = material_properties;
                 renderer_data->buffer_data[gb].elem_count
                     = model->material_count;
-                renderer_data->buffer_data[gb].buffer = material_properties;
             }
 
             if (renderer_data->buffer_data[gb].elem_count
@@ -846,13 +860,13 @@ update_app(hk_assets* assets,
                                 ->texture_data[required_texture_count
                                                + optional_texture_count]
                                 = (hk_graphics_texture_data){
+                                    .texture = &(m->materials[j].textures[k]),
                                     .id = (u32)hk_3d_to_1d_index(
                                         m->materials[j].textures[k].type,
                                         j,
                                         model_id,
                                         HK_TEXTURE_TYPE_COUNT,
-                                        metadata->max_material_count),
-                                    .texture = &(m->materials[j].textures[k])};
+                                        metadata->max_material_count)};
 
                             if (i == 0)
                             {
@@ -893,36 +907,37 @@ update_app(hk_assets* assets,
             for (u32 i = 0; i < drawables.drawable_count; i += 1)
             {
                 hk_graphics_drawable* d = &drawables.drawables[i];
-                constants_cb* constants;
+                per_draw* per_draw_data;
                 hk_scratch_alloc(transient_mem,
-                                 sizeof(constants_cb),
-                                 alignof(constants_cb),
-                                 &constants,
+                                 sizeof(per_draw),
+                                 alignof(per_draw),
+                                 &per_draw_data,
                                  err);
-                *constants
-                    = (constants_cb){.vertex_offset = d->vertex_offset,
-                                     .index_offset = d->index_offset,
-                                     .material_id = d->material_id,
-                                     .texture_id = (u32)hk_3d_to_1d_index(
-                                         0,
-                                         d->material_id,
-                                         d->art_id,
-                                         HK_TEXTURE_TYPE_COUNT,
-                                         metadata->max_material_count),
-                                     .global_transform = d->global_transform};
+                *per_draw_data
+                    = (per_draw){.global_transform = d->global_transform,
+                                 .vertex_offset = d->vertex_offset,
+                                 .index_offset = d->index_offset,
+                                 .material_id = d->material_id,
+                                 .texture_id = (u32)hk_3d_to_1d_index(
+                                     0,
+                                     d->material_id,
+                                     d->art_id,
+                                     HK_TEXTURE_TYPE_COUNT,
+                                     metadata->max_material_count)};
 
                 renderer_data->draw_data[i] = (hk_graphics_draw_data){
-                    .opaque
-                    = i < drawables.opaque_drawable_count ? true : false,
+                    .constants = per_draw_data,
                     .vertex_count = d->index_count,
                     .instance_count = 1,
-                    .start_texture_id = constants->texture_id,
+                    .start_texture_id = per_draw_data->texture_id,
                     .texture_count = HK_TEXTURE_TYPE_COUNT,
-                    .constants = constants};
+                    .opaque
+                    = i < drawables.opaque_drawable_count ? true : false,
+                };
             }
 
-            renderer_data->wireframe = app_state.wireframe_mode;
             renderer_data->draw_count = drawables.drawable_count;
+            renderer_data->wireframe = app_state.wireframe_mode;
         }
     }
 }
