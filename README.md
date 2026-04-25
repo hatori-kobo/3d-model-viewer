@@ -22,11 +22,12 @@ and run the application.
 
 - Physically-based rendering (PBR) with support for base color,
   metallic-roughness, normal, and emissive textures
-- Support for non-opaque materials (via translucency sorting)
-- Support for animation, including skeletal animation (via mesh skinning)
 - Custom renderers for all modern PC graphics APIs (Direct3D 11, Direct3D 12,
   and Vulkan)
 - Bindless rendering and custom texture cache (Direct3D 12/Vulkan)
+- Rotations represented as quaternions generated from axis-angle
+- Support for non-opaque materials (via translucency sorting)
+- Support for animation, including skeletal animation (via mesh skinning)
 - Support for arbitrary display resolutions, refresh rates, and aspect ratios
 - Support for Steam Deck and other Linux-based devices via Proton
 - Arcball camera (camera is rotated on a sphere around the model)
