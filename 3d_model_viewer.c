@@ -480,18 +480,27 @@ process_action(input_action_type at, hk_f32_2x event_value, hk_error* err)
     {
         case INPUT_ACTION_TYPE_NEXT_MODEL:
         {
-            app_state.model_id = (app_state.model_id == MODEL_COUNT - 1)
-                                     ? 1
-                                     : app_state.model_id + 1;
-            reset_view();
+            u32 model_id = (app_state.model_id == MODEL_COUNT - 1)
+                               ? 1
+                               : app_state.model_id + 1;
+            b8 model_changed = (app_state.model_id != model_id);
+            app_state.model_id = model_id;
+            if (model_changed)
+            {
+                reset_view();
+            }
             break;
         }
         case INPUT_ACTION_TYPE_PREVIOUS_MODEL:
         {
-            app_state.model_id = (app_state.model_id == 1)
-                                     ? MODEL_COUNT - 1
-                                     : app_state.model_id - 1;
-            reset_view();
+            u32 model_id = (app_state.model_id == 1) ? MODEL_COUNT - 1
+                                                     : app_state.model_id - 1;
+            b8 model_changed = (app_state.model_id != model_id);
+            app_state.model_id = model_id;
+            if (model_changed)
+            {
+                reset_view();
+            }
             break;
         }
         case INPUT_ACTION_TYPE_NEXT_ANIMATION:
@@ -721,13 +730,12 @@ update_app(hk_assets* assets,
     hk_f32_4x4* joint_transforms = 0;
     hk_graphics_drawables drawables = {0};
     {
-        hk_asset_model models[] = {*model};
         u32 model_ids[] = {app_state.model_id};
         hk_animation animations[] = {app_state.animation};
         hk_assets_get_3d_drawables(assets,
                                    model_ids,
                                    animations,
-                                   CAP(models),
+                                   CAP(model_ids),
                                    &view_from_model,
                                    transient_mem,
                                    &joint_transforms,
@@ -931,8 +939,7 @@ update_app(hk_assets* assets,
                     .instance_count = 1,
                     .start_texture_id = per_draw_data->texture_id,
                     .texture_count = HK_TEXTURE_TYPE_COUNT,
-                    .opaque
-                    = i < drawables.opaque_drawable_count ? true : false,
+                    .opaque = (i < drawables.opaque_drawable_count),
                 };
             }
 
