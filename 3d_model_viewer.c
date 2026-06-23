@@ -67,7 +67,7 @@ typedef struct
     hk_camera camera;                                         // align: 4
     input_action input_action_map[HK_INPUT_EVENT_TYPE_COUNT]; // align: 4
     hk_graphics_api gfx_api;                                  // align: 4
-    hk_graphics_api supported_gfx_apis;                       // align: 4
+    hk_bitmask supported_gfx_apis;                            // align: 4
     hk_f32_3x scaling;
     hk_f32_3x translation;
     u32 model_id;
@@ -423,34 +423,36 @@ init_app(hk_file_read_fp hk_file_read,
     {
         hk_graphics_buffer_data buffer_data[]
             = {{.elem_size = sizeof(per_frame),
-                .shader_stage = HK_SHADER_STAGE_VERTEX,
+                .shader_stage = HK_BIT_FLAG(HK_SHADER_STAGE_VERTEX),
                 .max_elem_count = 1,
                 .id = GRAPHICS_BUFFER_PER_FRAME_CB},
                {.elem_size = sizeof(hk_vertex),
-                .shader_stage = HK_SHADER_STAGE_VERTEX,
+                .shader_stage = HK_BIT_FLAG(HK_SHADER_STAGE_VERTEX),
                 .max_elem_count = metadata->max_vertex_count,
                 .id = GRAPHICS_BUFFER_VERTICES_SB},
                {.elem_size = sizeof(HK_GRAPHICS_INDEX_TYPE),
-                .shader_stage = HK_SHADER_STAGE_VERTEX,
+                .shader_stage = HK_BIT_FLAG(HK_SHADER_STAGE_VERTEX),
                 .max_elem_count = metadata->max_index_count,
                 .id = GRAPHICS_BUFFER_INDICES_SB},
                {.elem_size = sizeof(hk_f32_4x4),
-                .shader_stage = HK_SHADER_STAGE_VERTEX,
+                .shader_stage = HK_BIT_FLAG(HK_SHADER_STAGE_VERTEX),
                 .max_elem_count = metadata->max_joint_count,
                 .id = GRAPHICS_BUFFER_JOINT_TRANSFORMS_SB},
                {.elem_size = sizeof(hk_asset_material_properties),
-                .shader_stage = HK_SHADER_STAGE_PIXEL,
+                .shader_stage = HK_BIT_FLAG(HK_SHADER_STAGE_PIXEL),
                 .max_elem_count = metadata->max_material_count,
                 .id = GRAPHICS_BUFFER_MATERIAL_PROPERTIES_SB}};
         static_assert(CAP(buffer_data) == GRAPHICS_BUFFER_COUNT,
                       "unexpected buffer data count");
 
         *renderer_data = (hk_graphics_renderer_data){
+            .shaders = (*assets)->shaders,
             .constant_count = sizeof(per_draw) / sizeof(u32),
             .buffer_count = CAP(buffer_data),
             .max_texture_count = (*assets)->model_count
                                  * metadata->max_material_count
                                  * HK_TEXTURE_TYPE_COUNT,
+            .shader_count = (*assets)->shader_count,
             .wireframe = app_state.wireframe_mode,
             .render_target_srgb = true,
             .depth_buffer_bit_count = 32};
