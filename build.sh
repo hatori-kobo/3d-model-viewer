@@ -12,50 +12,13 @@ fi
 mkdir -p "$project_dir/build"
 
 if [[ "$assets" -eq 1 ]]; then
-    # Shader Compilation
-    # -D: Set preprocessor macro
-    # -E: Set entrypoint name
-    # -T: Set shader target profile
-    # -Fo: Set output file path
-    # -vkbr a b c d: Assign HLSL register (a) in space (b) to binding (c) in descriptor set (d)
-    compile_vulkan_vs=(
-        "$vulkan_dxc"
-        "$project_dir/shaders.hlsl"
-        "${vulkan_dxc_flags[@]}"
-        "-DVULKAN"
-        "-E" "vs"
-        "-T" "vs_6_0"
-        "-Fo" "$project_dir/build/vulkan_vs.spv"
-        "-vkbr" "s0" "0" "0" "0"
-        "-vkbr" "b1" "0" "1" "0"
-        "-vkbr" "t2" "0" "2" "0"
-        "-vkbr" "t3" "0" "3" "0"
-        "-vkbr" "t4" "0" "4" "0"
-        "-vkbr" "t5" "0" "5" "0"
-        "-vkbr" "t6" "1" "6" "0"
-    )
-    compile_vulkan_ps=(
-        "$vulkan_dxc"
-        "$project_dir/shaders.hlsl"
-        "${vulkan_dxc_flags[@]}"
-        "-DVULKAN"
-        "-E" "ps"
-        "-T" "ps_6_0"
-        "-Fo" "$project_dir/build/vulkan_ps.spv"
-        "-vkbr" "s0" "0" "0" "0"
-        "-vkbr" "b1" "0" "1" "0"
-        "-vkbr" "t2" "0" "2" "0"
-        "-vkbr" "t3" "0" "3" "0"
-        "-vkbr" "t4" "0" "4" "0"
-        "-vkbr" "t5" "0" "5" "0"
-        "-vkbr" "t6" "1" "6" "0"
-    )
-    "${compile_vulkan_vs[@]}"
-    "${compile_vulkan_ps[@]}"
-
     # Asset Compilation
     pushd "$project_dir" > /dev/null
-    asset_compiler
+    if [[ "$release" -eq 1 ]]; then
+        asset_compiler -r
+    else
+        asset_compiler
+    fi
     popd > /dev/null
 
     # Resource Compilation
