@@ -4,7 +4,7 @@
 Kobo. It serves as a basic demonstration of the 3D capabilities of the
 proprietary engine.
 
-![Demo](demo.webp)
+[![Demo](demo.webp)](https://youtu.be/kYa5-k5raeo?si=AvcuEIXVipCukAD1)
 
 All code has been written from scratch in-house following "handmade" principles,
 with minimal use of external libraries and other dependencies. The only
