@@ -23,7 +23,7 @@ if [[ "$assets" -eq 1 ]]; then
 
     # Resource Compilation
     # -fo: Set RES file path
-    rc -fo "$project_dir/icon.res" -nologo "$project_dir/icon.rc"
+    rc -fo "$project_dir/build/resources.res" -nologo "$project_dir/resources.rc"
 fi
 
 # -I: Set include dir path
@@ -43,7 +43,7 @@ link_flags+=(
 compile_exe=(
     "$cl"
     "$project_dir/$project_name.c"
-    "$project_dir/icon.res"
+    "$project_dir/build/resources.res"
     "${cl_flags[@]}"
     "-link"
     "${link_flags[@]}"
