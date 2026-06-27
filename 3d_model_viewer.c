@@ -29,6 +29,7 @@ typedef enum
     INPUT_ACTION_TYPE_ZOOM_IN,
     INPUT_ACTION_TYPE_ZOOM_OUT,
     INPUT_ACTION_TYPE_ZOOM,
+    INPUT_ACTION_TYPE_TOGGLE_WIREFRAME_MODE,
     INPUT_ACTION_TYPE_COUNT
 } input_action_type;
 
@@ -271,6 +272,7 @@ imgui_ui(void)
         ImGui_Text("[W/A/Left/Up]: Previous Model");
         ImGui_Text("[E]: Next Animation");
         ImGui_Text("[Q]: Previous Animation");
+        ImGui_Text("[F]: Toggle Wireframe Mode");
         ImGui_Text("[Alt+Enter]: Toggle Fullscreen");
     }
 
@@ -285,6 +287,7 @@ imgui_ui(void)
         ImGui_Text("[Left Bumper]: Previous Animation");
         ImGui_Text("[Left/Right Stick]: Rotate");
         ImGui_Text("[Right Trigger/Left Trigger]: Zoom In/Zoom Out");
+        ImGui_Text("[Y]: Toggle Wireframe Mode");
     }
 #endif
 }
@@ -410,6 +413,12 @@ init_app(hk_file_read_fp hk_file_read,
             case HK_MOUSE_SCROLLED:
             {
                 at->type = INPUT_ACTION_TYPE_ZOOM;
+                break;
+            }
+            case HK_KEYBOARD_F:
+            case HK_GAMEPAD_Y:
+            {
+                at->type = INPUT_ACTION_TYPE_TOGGLE_WIREFRAME_MODE;
                 break;
             }
             default:
@@ -555,6 +564,11 @@ process_action(input_action_type at, hk_f32_2x event_value, hk_error* err)
                             (hk_f32_2x){.min = 2.0f, .max = 10.0f},
                             true,
                             &app_state.camera);
+            break;
+        }
+        case INPUT_ACTION_TYPE_TOGGLE_WIREFRAME_MODE:
+        {
+            app_state.wireframe_mode = !app_state.wireframe_mode;
             break;
         }
         default:
