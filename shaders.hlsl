@@ -42,9 +42,9 @@ struct vertex
 struct material_properties
 {
     float4 base_color_factor;
+    uint has_texture;
     uint alpha_mode;
     float3 emissive_factor;
-    uint has_texture;
     float alpha_cutoff;
     float metallic_factor;
     float roughness_factor;
@@ -73,17 +73,38 @@ struct ps_out
 CONSTANT_BUFFER(per_draw, per_draw_cb, b0);
 
 // Vertex Shader Resources
+#if defined(VULKAN)
+[[vk::binding(1, 0)]]
+#endif
 CONSTANT_BUFFER(per_frame, per_frame_cb, b1);
+#if defined(VULKAN)
+[[vk::binding(2, 0)]]
+#endif
 StructuredBuffer<vertex> vertices_sb : register(t2);
+#if defined(VULKAN)
+[[vk::binding(3, 0)]]
+#endif
 StructuredBuffer<uint> indices_sb : register(t3);
+#if defined(VULKAN)
+[[vk::binding(4, 0)]]
+#endif
 StructuredBuffer<float4x4> joint_transforms_sb : register(t4);
 
 // Pixel Shader Resources
+#if defined(VULKAN)
+[[vk::binding(5, 0)]]
+#endif
 StructuredBuffer<material_properties> material_properties_sb : register(t5);
 #if defined(D3D12) || defined(VULKAN)
+#if defined(VULKAN)
+[[vk::binding(6, 0)]]
+#endif
 Texture2D textures[] : TEXTURE : register(t6, space1);
 #else
 Texture2D textures[4] : TEXTURE : register(t6);
+#endif
+#if defined(VULKAN)
+[[vk::binding(0, 0)]]
 #endif
 SamplerState ss : SAMPLER : register(s0);
 

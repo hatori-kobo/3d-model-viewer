@@ -11,91 +11,14 @@ fi
 
 mkdir -p "$project_dir/build"
 
-if [[ "$all" -eq 1 ]]; then
-    # Shader Compilation
-    # -D: Set preprocessor macro
-    # -E: Set entrypoint name
-    # -T: Set shader target profile
-    # -Fo: Set output file path
-    # -vkbr a b c d: Assign HLSL register (a) in space (b) to binding (c) in descriptor set (d)
-    compile_d3d11_vs=(
-        "fxc"
-        "$project_dir/shaders.hlsl"
-        "${fxc_flags[@]}"
-        "-DD3D11"
-        "-E" "vs"
-        "-T" "vs_4_0"
-        "-Fo" "$project_dir/build/d3d11_vs.dxbc"
-    )
-    compile_d3d11_ps=(
-        "fxc"
-        "$project_dir/shaders.hlsl"
-        "${fxc_flags[@]}"
-        "-DD3D11"
-        "-E" "ps"
-        "-T" "ps_4_0"
-        "-Fo" "$project_dir/build/d3d11_ps.dxbc"
-    )
-    compile_d3d12_vs=(
-        "fxc"
-        "$project_dir/shaders.hlsl"
-        "${fxc_flags[@]}"
-        "-DD3D12"
-        "-E" "vs"
-        "-T" "vs_5_1"
-        "-Fo" "$project_dir/build/d3d12_vs.dxbc"
-    )
-    compile_d3d12_ps=(
-        "fxc"
-        "$project_dir/shaders.hlsl"
-        "${fxc_flags[@]}"
-        "-DD3D12"
-        "-E" "ps"
-        "-T" "ps_5_1"
-        "-Fo" "$project_dir/build/d3d12_ps.dxbc"
-    )
-    compile_vulkan_vs=(
-        "$vulkan_dxc"
-        "$project_dir/shaders.hlsl"
-        "${vulkan_dxc_flags[@]}"
-        "-DVULKAN"
-        "-E" "vs"
-        "-T" "vs_6_0"
-        "-Fo" "$project_dir/build/vulkan_vs.spv"
-        "-vkbr" "s0" "0" "0" "0"
-        "-vkbr" "b1" "0" "1" "0"
-        "-vkbr" "t2" "0" "2" "0"
-        "-vkbr" "t3" "0" "3" "0"
-        "-vkbr" "t4" "0" "4" "0"
-        "-vkbr" "t5" "0" "5" "0"
-        "-vkbr" "t6" "1" "6" "0"
-    )
-    compile_vulkan_ps=(
-        "$vulkan_dxc"
-        "$project_dir/shaders.hlsl"
-        "${vulkan_dxc_flags[@]}"
-        "-DVULKAN"
-        "-E" "ps"
-        "-T" "ps_6_0"
-        "-Fo" "$project_dir/build/vulkan_ps.spv"
-        "-vkbr" "s0" "0" "0" "0"
-        "-vkbr" "b1" "0" "1" "0"
-        "-vkbr" "t2" "0" "2" "0"
-        "-vkbr" "t3" "0" "3" "0"
-        "-vkbr" "t4" "0" "4" "0"
-        "-vkbr" "t5" "0" "5" "0"
-        "-vkbr" "t6" "1" "6" "0"
-    )
-    "${compile_d3d11_vs[@]}" > /dev/null
-    "${compile_d3d11_ps[@]}" > /dev/null
-    "${compile_d3d12_vs[@]}" > /dev/null
-    "${compile_d3d12_ps[@]}" > /dev/null
-    "${compile_vulkan_vs[@]}"
-    "${compile_vulkan_ps[@]}"
-
+if [[ "$assets" -eq 1 ]]; then
     # Asset Compilation
     pushd "$project_dir" > /dev/null
-    asset_compiler
+    if [[ "$release" -eq 1 ]]; then
+        asset_compiler -r
+    else
+        asset_compiler
+    fi
     popd > /dev/null
 
     # Resource Compilation
@@ -128,12 +51,12 @@ compile_exe=(
 )
 "${compile_exe[@]}"
 
-clean_ext+=(
+clean_files+=(
 )
 if [[ "$clean" -eq 1 ]]; then
-    pushd "$project_dir/build" > /dev/null
-    for ext in "${clean_ext[@]}"; do
-        rm -f "*.$ext"
+    pushd "$project_dir/build/" > /dev/null
+    for file_pattern in "${clean_files[@]}"; do
+        rm -f $file_pattern
     done
     popd > /dev/null
 fi
