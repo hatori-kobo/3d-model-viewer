@@ -14,10 +14,10 @@
 struct per_draw
 {
     float4x4 global_transform;
-    uint vertex_offset;
-    uint index_offset;
-    uint material_id;
-    uint texture_id;
+    int vertex_offset;
+    int index_offset;
+    int material_id;
+    int texture_id;
 };
 
 struct per_frame
@@ -36,14 +36,14 @@ struct vertex
     float3 position;
     float3 normal;
     float2 tex_coord;
-    uint4 joint_ids;
+    int4 joint_ids;
 };
 
 struct material_properties
 {
     float4 base_color_factor;
-    uint has_texture;
-    uint alpha_mode;
+    int has_texture;
+    int alpha_mode;
     float3 emissive_factor;
     float alpha_cutoff;
     float metallic_factor;
@@ -84,7 +84,7 @@ StructuredBuffer<vertex> vertices_sb : register(t2);
 #if defined(VULKAN)
 [[vk::binding(3, 0)]]
 #endif
-StructuredBuffer<uint> indices_sb : register(t3);
+StructuredBuffer<int> indices_sb : register(t3);
 #if defined(VULKAN)
 [[vk::binding(4, 0)]]
 #endif
@@ -111,12 +111,12 @@ SamplerState ss : SAMPLER : register(s0);
 vs_out
 vs(uint index_id : SV_VertexID)
 {
-    uint vertex_id = indices_sb[per_draw_cb.index_offset + index_id];
+    int vertex_id = indices_sb[per_draw_cb.index_offset + index_id];
     vertex v = vertices_sb[per_draw_cb.vertex_offset + vertex_id];
 
     float joint_weight_sum = 0.0f;
     float4x4 skin_transform = 0.0f;
-    for (uint i = 0; i < 4; i += 1)
+    for (int i = 0; i < 4; i += 1)
     {
         skin_transform
             += v.joint_weights[i] * joint_transforms_sb[v.joint_ids[i]];
@@ -198,7 +198,7 @@ geometry_smith(float n_dot_l, float n_dot_v, float roughness)
 
 // NOTE: hk_alpha_mode values: HK_AM_OPAQUE (0), HK_AM_MASK (1), HK_AM_BLEND (2)
 float4
-get_base_color(uint tex_offset,
+get_base_color(int tex_offset,
                float2 tex_coord,
                float4 vertex_color,
                material_properties mp)
@@ -220,7 +220,7 @@ get_base_color(uint tex_offset,
 }
 
 float
-get_metallic(uint tex_offset, float2 tex_coord, material_properties mp)
+get_metallic(int tex_offset, float2 tex_coord, material_properties mp)
 {
     float metallic = mp.metallic_factor;
     if (mp.has_texture & (1u << 1))
@@ -232,7 +232,7 @@ get_metallic(uint tex_offset, float2 tex_coord, material_properties mp)
 }
 
 float
-get_roughness(uint tex_offset, float2 tex_coord, material_properties mp)
+get_roughness(int tex_offset, float2 tex_coord, material_properties mp)
 {
     float roughness = mp.roughness_factor;
     if (mp.has_texture & (1u << 1))
@@ -244,7 +244,7 @@ get_roughness(uint tex_offset, float2 tex_coord, material_properties mp)
 }
 
 float3
-get_normal(uint tex_offset,
+get_normal(int tex_offset,
            float2 tex_coord,
            float3 normal,
            float3 tangent,
@@ -270,7 +270,7 @@ get_normal(uint tex_offset,
 }
 
 float3
-get_emissive(uint tex_offset, float2 tex_coord, material_properties mp)
+get_emissive(int tex_offset, float2 tex_coord, material_properties mp)
 {
     float3 emissive = mp.emissive_factor;
     if (mp.has_texture & (1u << 3))
@@ -288,9 +288,9 @@ ps(vs_out i)
 
     // Sample textures.
 #if defined(D3D12) || defined(VULKAN)
-    uint tex_offset = per_draw_cb.texture_id;
+    int tex_offset = per_draw_cb.texture_id;
 #else
-    uint tex_offset = 0;
+    int tex_offset = 0;
 #endif
     float4 base_color = get_base_color(tex_offset, i.tex_coord, i.color, mp);
     float metallic = get_metallic(tex_offset, i.tex_coord, mp);
@@ -308,7 +308,7 @@ ps(vs_out i)
     // approximation of the light reflected off a surface given its material
     // properties.
     // NOTE: `f0` is the base reflectivity when looking directly at the surface
-    // (i.e. 0 degree angle between `n` and `v`).
+    // (i.e. 0 angle between `n` and `v`).
     float3 n = normalize(normal);
     float3 l = normalize(-i.view_dir); // NOTE: `light_dir` for manual control
     float3 v = normalize(-i.view_dir);

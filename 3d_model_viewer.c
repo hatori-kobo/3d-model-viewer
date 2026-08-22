@@ -38,10 +38,10 @@ typedef enum
 typedef struct
 {
     hk_f32_4x4 global_transform; // align: 16
-    u32 vertex_offset;
-    u32 index_offset;
-    u32 material_id;
-    u32 texture_id;
+    i32 vertex_offset;
+    i32 index_offset;
+    i32 material_id;
+    i32 texture_id;
 } per_draw;
 
 // NOTE: This is used as a shader resource so padding must be made explicit.
@@ -68,11 +68,11 @@ typedef struct
     hk_camera camera;                                         // align: 4
     input_action input_action_map[HK_INPUT_EVENT_TYPE_COUNT]; // align: 4
     hk_graphics_api gfx_api;                                  // align: 4
-    hk_bitmask supported_gfx_apis;                            // align: 4
+    hk_bitmask_32 supported_gfx_apis;                         // align: 4
     hk_f32_3x scaling;
     hk_f32_3x translation;
-    u32 model_id;
-    u32 model_animation_count;
+    i32 model_id;
+    i32 model_animation_count;
     b8 fullscreen;
     b8 vsync;
     b8 auto_rotate;
@@ -81,12 +81,12 @@ typedef struct
 
 typedef struct
 {
-    u32 model_id_last_frame;
-    u32 max_vertex_count;
-    u32 max_index_count;
-    u32 max_joint_count;
-    u32 max_material_count;
-    u32 total_texture_count;
+    i32 model_id_last_frame;
+    i32 max_vertex_count;
+    i32 max_index_count;
+    i32 max_joint_count;
+    i32 max_material_count;
+    i32 total_texture_count;
 } models_metadata;
 
 typedef enum
@@ -126,38 +126,42 @@ GLOBAL hk_config config
        .gamepad_count = 1};
 
 GLOBAL application_state app_state
-    = {.camera = {.up_axis = {.y = 1.0f}, .arcball = true},
+    = {.camera = {.up_axis = {.y = 1.0f},
+                  .x_position_range = {.min = 0.0f, .max = 1.0f},
+                  .y_position_range = {.min = 0.0f, .max = 0.5f},
+                  .z_position_range = {.min = 2.0f, .max = 10.0f},
+                  .arcball = TRUE,
+                  .x_wrap = TRUE},
        .model_id = MODEL_DAMAGED_HELMET,
-       .vsync = true};
+       .vsync = TRUE};
 
 FUNCTION void
 reset_view(void)
 {
     app_state.animation = (hk_animation){0};
-    app_state.camera.position
-        = (hk_f32_3x){.x = HK_PI / 4.0f, .y = HK_PI / 2.0f, .z = 6.0f};
+    app_state.camera.position = (hk_f32_3x){.x = 0.125f, .y = 0.25f, .z = 6.0f};
     app_state.scaling = (hk_f32_3x){0};
     app_state.rotation = (hk_f32_4x){0};
     app_state.translation = (hk_f32_3x){0};
-    app_state.auto_rotate = true;
+    app_state.auto_rotate = TRUE;
 
     if (app_state.model_id == MODEL_ABSTRACT_RAINBOW_TRANSLUCENT_PENDANT)
     {
         app_state.scaling = hk_f32_3x_pack(0.8f);
         app_state.rotation
             = hk_f32_4x_rotation((hk_f32_3x){.x = 0.0f, .y = 1.0f, .z = 0.0f},
-                                 -150.0f);
+                                 -0.4f);
     }
     else if (app_state.model_id == MODEL_BOX_ANIMATED)
     {
-        app_state.camera.position.y = HK_PI / 4.0f;
+        app_state.camera.position.y = 0.125f;
         app_state.scaling = hk_f32_3x_pack(0.45f);
     }
     else if (app_state.model_id == MODEL_BRAINSTEM)
     {
-        app_state.camera.position.x = HK_PI / 2.0f;
+        app_state.camera.position.x = 0.25f;
         app_state.translation.y = -1.0f;
-        app_state.auto_rotate = false;
+        app_state.auto_rotate = FALSE;
     }
     else if (app_state.model_id == MODEL_CORSET)
     {
@@ -175,24 +179,24 @@ reset_view(void)
     }
     else if (app_state.model_id == MODEL_FTM)
     {
-        app_state.camera.position.y = HK_PI / 2.5f;
+        app_state.camera.position.y = 0.2f;
         app_state.scaling = hk_f32_3x_pack(0.13f);
         app_state.rotation
             = hk_f32_4x_rotation((hk_f32_3x){.x = 0.0f, .y = 1.0f, .z = 0.0f},
-                                 180.0f);
+                                 0.5f);
     }
     else if (app_state.model_id == MODEL_PLAYSTATION_1)
     {
         app_state.scaling = hk_f32_3x_pack(0.5f);
         app_state.rotation = hk_f32_4x_mul_quaternion(
             hk_f32_4x_rotation((hk_f32_3x){.x = 1.0f, .y = 0.0f, .z = 0.0f},
-                               90.0f),
+                               0.25f),
             hk_f32_4x_rotation((hk_f32_3x){.x = 0.0f, .y = 1.0f, .z = 0.0f},
-                               -90.0f));
+                               -0.25f));
     }
     else if (app_state.model_id == MODEL_VIRTUAL_CITY)
     {
-        app_state.camera.position.y = HK_PI / 3.0f;
+        app_state.camera.position.y = 0.15f;
         app_state.scaling = hk_f32_3x_pack(0.075f);
     }
     else if (app_state.model_id == MODEL_WATER_BOTTLE)
@@ -200,7 +204,7 @@ reset_view(void)
         app_state.scaling = hk_f32_3x_pack(8.0f);
         app_state.rotation
             = hk_f32_4x_rotation((hk_f32_3x){.x = 0.0f, .y = 1.0f, .z = 0.0f},
-                                 -90.0f);
+                                 -0.25f);
     }
 }
 
@@ -215,7 +219,7 @@ imgui_ui(void)
                              &app_state.vsync,
                              &app_state.wireframe_mode);
 
-    u32 model_id = app_state.model_id;
+    i32 model_id = app_state.model_id;
 
     b8 model_selection_active
         = ImGui_CollapsingHeader("Models", ImGuiTreeNodeFlags_DefaultOpen);
@@ -224,7 +228,7 @@ imgui_ui(void)
         for (asset_type_model i = 1; i < MODEL_COUNT; i += 1)
         {
             ImGui_RadioButtonIntPtr(model_names[i],
-                                    (s32*)&app_state.model_id,
+                                    (i32*)&app_state.model_id,
                                     i);
         }
         if (app_state.model_id != model_id)
@@ -240,7 +244,7 @@ imgui_ui(void)
                                      ImGuiTreeNodeFlags_DefaultOpen);
         if (animation_selection_active)
         {
-            for (u32 i = 1; i <= app_state.model_animation_count; i += 1)
+            for (i32 i = 1; i <= app_state.model_animation_count; i += 1)
             {
                 c8 animation_label[15] = {0};
                 StringCchPrintfA(animation_label,
@@ -248,7 +252,7 @@ imgui_ui(void)
                                  "Animation %u",
                                  i);
                 ImGui_RadioButtonIntPtr(animation_label,
-                                        (s32*)&app_state.animation.id,
+                                        (i32*)&app_state.animation.id,
                                         i - 1);
             }
         }
@@ -315,7 +319,7 @@ init_app(hk_file_read_fp hk_file_read,
                   "unexpected model names count");
 
     // Get models metadata.
-    for (u32 i = 0; i < (*assets)->model_count; i += 1)
+    for (i32 i = 0; i < (*assets)->model_count; i += 1)
     {
         hk_asset_model* model = &(*assets)->models[i];
 
@@ -339,7 +343,7 @@ init_app(hk_file_read_fp hk_file_read,
             metadata->max_material_count = model->material_count;
         }
 
-        for (u32 j = 0; j < model->material_count; j += 1)
+        for (i32 j = 0; j < model->material_count; j += 1)
         {
             metadata->total_texture_count += model->materials[j].texture_count;
         }
@@ -456,14 +460,14 @@ init_app(hk_file_read_fp hk_file_read,
 
         *renderer_data = (hk_graphics_renderer_data){
             .shaders = (*assets)->shaders,
-            .constant_count = sizeof(per_draw) / sizeof(u32),
+            .constant_count = sizeof(per_draw) / sizeof(i32),
             .buffer_count = CAP(buffer_data),
             .max_texture_count = (*assets)->model_count
                                  * metadata->max_material_count
                                  * HK_TEXTURE_TYPE_COUNT,
             .shader_count = (*assets)->shader_count,
             .wireframe = app_state.wireframe_mode,
-            .render_target_srgb = true,
+            .render_target_srgb = TRUE,
             .depth_buffer_bit_count = 32};
 
         hk_scratch_alloc(permanent_mem,
@@ -491,7 +495,7 @@ process_action(input_action_type at, hk_f32_2x event_value, hk_error* err)
     {
         case INPUT_ACTION_TYPE_NEXT_MODEL:
         {
-            u32 model_id = (app_state.model_id == MODEL_COUNT - 1)
+            i32 model_id = (app_state.model_id == MODEL_COUNT - 1)
                                ? 1
                                : app_state.model_id + 1;
             b8 model_changed = (app_state.model_id != model_id);
@@ -504,7 +508,7 @@ process_action(input_action_type at, hk_f32_2x event_value, hk_error* err)
         }
         case INPUT_ACTION_TYPE_PREVIOUS_MODEL:
         {
-            u32 model_id = (app_state.model_id == 1) ? MODEL_COUNT - 1
+            i32 model_id = (app_state.model_id == 1) ? MODEL_COUNT - 1
                                                      : app_state.model_id - 1;
             b8 model_changed = (app_state.model_id != model_id);
             app_state.model_id = model_id;
@@ -531,39 +535,27 @@ process_action(input_action_type at, hk_f32_2x event_value, hk_error* err)
         }
         case INPUT_ACTION_TYPE_ROTATE:
         {
-            app_state.auto_rotate = false;
+            app_state.auto_rotate = FALSE;
 
-            f32 manual_rotation_rate = hk_f32_deg_to_rad(135.0f); // degrees/s
+            f32 manual_rotation_rate = 0.375f; // turns/sec
             hk_f32_2x rotation_speed
                 = hk_f32_2x_mul(hk_f32_2x_pack((manual_rotation_rate
                                                 * (1.0f / HK_MILLISECOND(1)))
                                                * frame_time),
                                 event_value);
-            app_state.camera.position.x += rotation_speed.x;
-            app_state.camera.position.y += rotation_speed.y;
-            hk_camera_clamp((hk_f32_2x){.min = 0.0f, .max = 2.0f * HK_PI},
-                            (hk_f32_2x){.min = 0.0f, .max = HK_PI},
-                            (hk_f32_2x){.min = 2.0f, .max = 10.0f},
-                            true,
-                            &app_state.camera);
+            hk_camera_move(&app_state.camera,
+                           rotation_speed.x,
+                           rotation_speed.y,
+                           0.0f);
             break;
         }
         case INPUT_ACTION_TYPE_ZOOM_IN:
         case INPUT_ACTION_TYPE_ZOOM_OUT:
         case INPUT_ACTION_TYPE_ZOOM:
         {
-            if (at == INPUT_ACTION_TYPE_ZOOM_OUT)
-            {
-                event_value.x *= -1.0f;
-            }
-            f32 zoom_rate = 1.0f / 150.0f;
+            f32 zoom_rate = -1.0f / 150.0f;
             f32 zoom_speed = zoom_rate * event_value.x * frame_time;
-            app_state.camera.position.z -= zoom_speed;
-            hk_camera_clamp((hk_f32_2x){.min = 0.0f, .max = 2.0f * HK_PI},
-                            (hk_f32_2x){.min = 0.0f, .max = HK_PI},
-                            (hk_f32_2x){.min = 2.0f, .max = 10.0f},
-                            true,
-                            &app_state.camera);
+            hk_camera_move(&app_state.camera, 0.0f, 0.0f, zoom_speed);
             break;
         }
         case INPUT_ACTION_TYPE_TOGGLE_WIREFRAME_MODE:
@@ -593,10 +585,10 @@ update_app(hk_assets* assets,
     // Process input.
     {
         // Process inputs in event queue.
-        for (; iq->read_idx != iq->write_idx;
-             iq->read_idx = (iq->read_idx + 1) % iq->event_count)
+        for (; iq->read_index != iq->write_index;
+             iq->read_index = (iq->read_index + 1) % iq->event_count)
         {
-            hk_input_event ie = iq->events[iq->read_idx];
+            hk_input_event ie = iq->events[iq->read_index];
             input_action* ia = &app_state.input_action_map[ie.event_type];
 
             // Skip any input event that does not have a mapped input action.
@@ -619,14 +611,14 @@ update_app(hk_assets* assets,
 
                     // Compute the vector from the previous mouse position to
                     // the current one.
-                    b8 drag = false;
-                    for (u32 read_idx = (iq->read_idx + iq->event_count - 1)
-                                        % iq->event_count;
-                         read_idx != iq->write_idx;
-                         read_idx
-                         = (read_idx + iq->event_count - 1) % iq->event_count)
+                    b8 drag = FALSE;
+                    for (i32 read_index = (iq->read_index + iq->event_count - 1)
+                                          % iq->event_count;
+                         read_index != iq->write_index;
+                         read_index
+                         = (read_index + iq->event_count - 1) % iq->event_count)
                     {
-                        hk_input_event prev_ie = iq->events[read_idx];
+                        hk_input_event prev_ie = iq->events[read_index];
 
                         // Don't look past the start of the chord.
                         if (prev_ie.event_type == HK_MOUSE_LEFT)
@@ -640,7 +632,7 @@ update_app(hk_assets* assets,
                             event_value = hk_f32_2x_mul(
                                 hk_f32_2x_sub(ie.value, prev_ie.value),
                                 hk_f32_2x_pack(cursor_multipler));
-                            drag = true;
+                            drag = TRUE;
                             break;
                         }
                     }
@@ -670,8 +662,7 @@ update_app(hk_assets* assets,
         }
 
         // Process held inputs.
-        for (hk_input_event_type et = 0; et < (s32)CAP(iq->duration_held);
-             et += 1)
+        for (hk_input_event_type et = 0; et < CAP(iq->duration_held); et += 1)
         {
             input_action* ia = &app_state.input_action_map[et];
 
@@ -692,16 +683,11 @@ update_app(hk_assets* assets,
 
         if (app_state.auto_rotate)
         {
-            f32 auto_rotation_rate = hk_f32_deg_to_rad(30.0f); // degrees/s
+            f32 auto_rotation_rate = 0.08f; // turns/sec
             f32 rotation_speed
                 = (auto_rotation_rate * (1.0f / HK_MILLISECOND(1)))
                   * frame_time;
-            app_state.camera.position.x += rotation_speed;
-            hk_camera_clamp((hk_f32_2x){.min = 0.0f, .max = 2.0f * HK_PI},
-                            (hk_f32_2x){.min = 0.0f, .max = HK_PI},
-                            (hk_f32_2x){.min = 2.0f, .max = 10.0f},
-                            true,
-                            &app_state.camera);
+            hk_camera_move(&app_state.camera, rotation_speed, 0.0f, 0.0f);
         }
 
         if (app_state.model_id != metadata->model_id_last_frame)
@@ -737,7 +723,7 @@ update_app(hk_assets* assets,
     hk_f32_4x4 view_from_model
         = hk_f32_4x4_mul(view_from_world, world_from_model);
     hk_f32_4x4 clip_from_view = hk_f32_4x4_clip_from_view_perspective(
-        27.0f,
+        0.075f,
         render_res.width / render_res.height,
         0.01f,
         16.0f);
@@ -746,7 +732,7 @@ update_app(hk_assets* assets,
     hk_f32_4x4* joint_transforms = 0;
     hk_graphics_drawables drawables = {0};
     {
-        u32 model_ids[] = {app_state.model_id};
+        i32 model_ids[] = {app_state.model_id};
         hk_animation animations[] = {app_state.animation};
         hk_assets_get_3d_drawables(assets,
                                    model_ids,
@@ -816,7 +802,7 @@ update_app(hk_assets* assets,
                                  &material_properties,
                                  err);
 
-                for (u32 i = 0; i < model->material_count; i += 1)
+                for (i32 i = 0; i < model->material_count; i += 1)
                 {
                     material_properties[i] = model->materials[i].properties;
                 }
@@ -846,28 +832,28 @@ update_app(hk_assets* assets,
             // Consider textures for the current model required and textures
             // for all other models in priority order (i.e. +/-1, +/-2, etc)
             // optional.
-            u32 required_texture_count = 0;
-            u32 optional_texture_count = 0;
+            i32 required_texture_count = 0;
+            i32 optional_texture_count = 0;
             if (app_state.model_id != metadata->model_id_last_frame)
             {
-                s32 offset = 0;
-                b8 positive = true;
-                for (u32 i = 0; i < assets->model_count; i += 1)
+                i32 offset = 0;
+                b8 positive = TRUE;
+                for (i32 i = 0; i < assets->model_count; i += 1)
                 {
-                    s32 model_id = 0;
+                    i32 model_id = 0;
                     if (i == 0)
                     {
-                        model_id = (s32)app_state.model_id;
+                        model_id = app_state.model_id;
                     }
                     else if (positive)
                     {
-                        model_id = ((s32)app_state.model_id + offset)
-                                   % (s32)assets->model_count;
+                        model_id = (app_state.model_id + offset)
+                                   % assets->model_count;
                     }
                     else
                     {
-                        model_id = ((s32)app_state.model_id - offset)
-                                   % (s32)assets->model_count;
+                        model_id = (app_state.model_id - offset)
+                                   % assets->model_count;
                         if (model_id < 0)
                         {
                             model_id += assets->model_count;
@@ -875,9 +861,9 @@ update_app(hk_assets* assets,
                     }
 
                     hk_asset_model* m = &assets->models[model_id];
-                    for (u32 j = 0; j < m->material_count; j += 1)
+                    for (i32 j = 0; j < m->material_count; j += 1)
                     {
-                        for (u32 k = 0; k < m->materials[j].texture_count;
+                        for (i32 k = 0; k < m->materials[j].texture_count;
                              k += 1)
                         {
                             renderer_data
@@ -885,7 +871,7 @@ update_app(hk_assets* assets,
                                                + optional_texture_count]
                                 = (hk_graphics_texture_data){
                                     .texture = &(m->materials[j].textures[k]),
-                                    .id = (u32)hk_3d_to_1d_index(
+                                    .id = (i32)hk_i64_from_3d_index(
                                         m->materials[j].textures[k].type,
                                         j,
                                         model_id,
@@ -928,7 +914,7 @@ update_app(hk_assets* assets,
                              &renderer_data->draw_data,
                              err);
 
-            for (u32 i = 0; i < drawables.drawable_count; i += 1)
+            for (i32 i = 0; i < drawables.drawable_count; i += 1)
             {
                 hk_graphics_drawable* d = &drawables.drawables[i];
                 per_draw* per_draw_data;
@@ -942,7 +928,7 @@ update_app(hk_assets* assets,
                                  .vertex_offset = d->vertex_offset,
                                  .index_offset = d->index_offset,
                                  .material_id = d->material_id,
-                                 .texture_id = (u32)hk_3d_to_1d_index(
+                                 .texture_id = (i32)hk_i64_from_3d_index(
                                      0,
                                      d->material_id,
                                      d->art_id,
@@ -966,8 +952,8 @@ update_app(hk_assets* assets,
 }
 
 #if defined(WINDOWS)
-s32 WINAPI
-wWinMain(HINSTANCE inst, HINSTANCE prev_inst, WCHAR* cmd_args, s32 show_code)
+i32 WINAPI
+wWinMain(HINSTANCE inst, HINSTANCE prev_inst, WCHAR* cmd_args, i32 show_code)
 {
     (void)prev_inst;
     (void)cmd_args;
